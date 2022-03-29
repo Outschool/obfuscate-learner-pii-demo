@@ -10,6 +10,7 @@ import { DATA_ROW_TERMINATOR, FINAL_DATA_ROW, ONE_MB } from "./constants";
 import {
   consumeHead,
   countDataBlocks,
+  findColumnMappings,
   findTocEntry,
   parseDataRow,
   replaceEmailBasedOnColumn,
@@ -20,11 +21,13 @@ import {
 } from "./helpers";
 import { PgCustomFormatter } from "./pgCustom";
 import {
+  ColumnMappings,
   DbDumpUploader,
   MainDumpProps,
   PgLogger,
   PgRowIterable,
   PgTocEntry,
+  TableColumnMappings,
 } from "./types";
 
 const client = new Client();
@@ -151,6 +154,7 @@ async function obfuscateSingleTable(props: {
   toc: PgTocEntry;
   dataRows: PgRowIterable;
   formatter: PgCustomFormatter;
+  tableMappings: TableColumnMappings;
   outputStream: NodeJS.WritableStream;
 }) {
   const { toc } = props;
@@ -159,7 +163,8 @@ async function obfuscateSingleTable(props: {
   const rowCounts = rowCounter();
 
   let iterator = rowCounts.iterator(props.dataRows);
-  iterator = transformDataRows(columnMappings, iterator);
+  const columnMappings = findColumnMappings(props.tableMappings, toc);
+  iterator = transformDataRows(<ColumnMappings>columnMappings, iterator);
 
   Readable.from(iterator, { objectMode: true })
     .pipe(createDeflate({ level: 9, memLevel: 9 }))
@@ -171,7 +176,10 @@ async function obfuscateSingleTable(props: {
   return dataFmtr.getBytesWritten();
 }
 
-async function* transformDataRows(dataIterator: AsyncGenerator<Buffer>) {
+async function* transformDataRows(
+  columnMappings: ColumnMappings,
+  dataIterator: AsyncGenerator<Buffer>
+) {
   let ended = false;
   for await (const row of dataIterator) {
     if (row.equals(FINAL_DATA_ROW)) {
