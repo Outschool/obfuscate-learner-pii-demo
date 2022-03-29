@@ -1,5 +1,21 @@
 import { formats, offsetFlag, sections } from "./constants";
 
+/**
+ * Defines the function signature for transforming table data.
+ *
+ * Row content is in the "COPY" "text" format described here:
+ * https://www.postgresql.org/docs/11/sql-copy.html
+ *
+ * @param content The raw column content
+ * @param columns An array of column names for the current table
+ * @param row All columns for the current table row. Positions align with the columns array.
+ */
+export type ColumnMapper = (
+  content: Buffer,
+  columns: string[],
+  row: Buffer[]
+) => Buffer;
+
 export interface DbCreds {
   host: string;
   dbname: string;
@@ -10,6 +26,13 @@ export interface DbCreds {
 export interface DbDumpUploader {
   outputStream: NodeJS.WritableStream;
   finalize: (finalHeader: Buffer) => Promise<void>;
+}
+
+export interface MainDumpProps {
+  logger: PgLogger;
+  tableMappings: TableColumnMappings;
+  inputStream: NodeJS.ReadableStream;
+  outputStream: NodeJS.WritableStream;
 }
 
 export enum PgVersion {
@@ -75,3 +98,7 @@ export interface PgOffset {
 }
 
 export type PgRowIterable = AsyncGenerator<Buffer, void>;
+
+export type TableColumnMappings = Record<string, TableMapper>;
+
+export type TableMapper = Record<string, ColumnMapper>;

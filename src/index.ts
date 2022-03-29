@@ -1,10 +1,12 @@
 import EventEmitter from "events";
+import Fs from "fs";
+import Path from "path";
 import { Client } from "pg";
 import { to as copyTo } from "pg-copy-streams";
-import { Readable } from "stream";
+import { PassThrough, Readable } from "stream";
 import { createDeflate } from "zlib";
 
-import { DATA_ROW_TERMINATOR, FINAL_DATA_ROW } from "./constants";
+import { DATA_ROW_TERMINATOR, FINAL_DATA_ROW, ONE_MB } from "./constants";
 import {
   consumeHead,
   countDataBlocks,
@@ -16,10 +18,23 @@ import {
   spawnPgDump,
   updateHeadForObfuscation,
 } from "./helpers";
-import { PgCustomFormatter, PgCustomReader } from "./pgCustom";
-import { DbDumpUploader, PgLogger, PgRowIterable, PgTocEntry } from "./types";
+import { PgCustomFormatter } from "./pgCustom";
+import {
+  DbDumpUploader,
+  MainDumpProps,
+  PgLogger,
+  PgRowIterable,
+  PgTocEntry,
+} from "./types";
 
 const client = new Client();
+
+const DEFAULT_DATABASE = "obufscate_outschool_pii";
+
+const PG_DUMP_EXPORT_PATH = Path.join(
+  __dirname,
+  "output/obfuscated-export.sql"
+);
 
 async function run() {
   await client.connect();
@@ -30,37 +45,39 @@ async function run() {
 run();
 
 async function createTestDb() {
-  await client.query("DROP TABLE IF EXISTS _obufscated_pii");
-  await client.query("CREATE TEMP TABLE _obfuscated_pii(email_address text);");
+  await client.query(`DROP TABLE IF EXISTS ${DEFAULT_DATABASE}`);
   await client.query(
-    "INSERT INTO _obfuscated_pii(email_address) values('myunobfuscatedemail@address.com');"
+    `CREATE TEMP TABLE  ${DEFAULT_DATABASE}(email_address text);`
+  );
+  await client.query(
+    `INSERT INTO  ${DEFAULT_DATABASE}(email_address) values('myunobfuscatedemail@address.com');`
   );
 }
 
-export async function dbDumpObfuscated(
-  dbCreds: DbCreds,
-  uploader: DbDumpUploader
-) {
-  // const client = new Client({
-  //   database: dbCreds.dbname,
-  //   host: dbCreds.host,
-  //   user: dbCreds.username,
-  //   password: dbCreds.password,
-  //   ssl:
-  //     dbCreds.host !== "localhost"
-  //       ? {
-  //           rejectUnauthorized: false,
-  //           ca: await readFile(__dirname + "/../../rds-2019-us-east-1.pem"),
-  //         }
-  //       : false,
-  // });
+function copyTable(): AsyncGenerator<Buffer> {
+  return (async function* () {
+    const query = "SELECT email_address from _obfuscated_pii";
+    const stream = client.query(copyTo(`COPY (${query}) TO STDOUT`));
+    yield* copyStreamToRows(stream);
+    yield FINAL_DATA_ROW;
+  })();
+}
+
+export async function dbDumpObfuscated(uploader: DbDumpUploader) {
+  const currentUser = (await client.query("SELECT current_user"))?.rows[0]
+    ?.current_user;
+  const dbCreds = {
+    dbname: DEFAULT_DATABASE,
+    host: "localhost",
+    user: currentUser,
+    password: "",
+  };
   const logger = console.log;
   const tableMappings = {
     _obfuscated_pii: {
       email: replaceEmailBasedOnColumn("uid"),
     },
   };
-
   const pgDump = spawnPgDump(dbCreds, tableMappings);
 
   logger("Starting");
@@ -68,7 +85,6 @@ export async function dbDumpObfuscated(
     logger,
     tableMappings,
     outputStream: uploader.outputStream,
-
     // Perf optimization:
     // add a large intermediate buffer to allow data to flow while processing,
     // since the reader doesn't consume in streaming mode
@@ -78,10 +94,21 @@ export async function dbDumpObfuscated(
   });
 
   logger("Finalizing");
-  // pass finalHeaderBuffer to a file save buffer
-  // finalHeaderBuffer
+  await writeFile(finalHeaderBuffer);
 
   logger("Finished");
+}
+
+function writeFile(finalHeaderBuffer: Buffer): Promise<boolean> {
+  return new Promise((resolve, reject) => {
+    const writableStream = Fs.createWriteStream(PG_DUMP_EXPORT_PATH);
+    writableStream.on("error", reject);
+    writableStream.write(finalHeaderBuffer);
+    writableStream.on("finish", () => {
+      writableStream.end();
+      resolve(true);
+    });
+  });
 }
 
 export async function obfuscatePgCustomDump(
@@ -131,12 +158,8 @@ async function obfuscateSingleTable(props: {
   const dataFmtr = props.formatter.createDataBlockFormatter(toc);
   const rowCounts = rowCounter();
 
-  const iterator = rowCounts.iterator(props.dataRows);
-  // if (columnMappings === "OMIT_TABLE") {
-  //   iterator = omitDataRows(iterator);
-  // } else if (columnMappings) {
-  //   iterator = transformDataRows(columnMappings, iterator);
-  // }
+  let iterator = rowCounts.iterator(props.dataRows);
+  iterator = transformDataRows(columnMappings, iterator);
 
   Readable.from(iterator, { objectMode: true })
     .pipe(createDeflate({ level: 9, memLevel: 9 }))
@@ -165,15 +188,6 @@ async function* transformDataRows(dataIterator: AsyncGenerator<Buffer>) {
     );
     yield serializeDataRow(data);
   }
-}
-
-function copyTable(): AsyncGenerator<Buffer> {
-  return (async function* () {
-    const query = "SELECT email_address from _obfuscated_pii";
-    const stream = client.query(copyTo(`COPY (${query}) TO STDOUT`));
-    yield* copyStreamToRows(stream);
-    yield FINAL_DATA_ROW;
-  })();
 }
 
 async function* copyStreamToRows(stream: NodeJS.ReadableStream) {
