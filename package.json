@@ -2,14 +2,22 @@
   "name": "obufscate-pii",
   "version": "0.0.1",
   "description": "obfuscate personally identifiable information",
-  "main": "index.ts",
-  "author": "Outschool",
   "license": "MIT",
+  "author": "Outschool",
+  "main": "index.ts",
   "scripts": {
+    "build": "tsc --build --clean",
     "dev": "NODE_OPTIONS=--max-old-space-size=4096 concurrently \"tsc --watch\" \"nodemon -q dist/index.js\"",
-    "lint": "yarn run eslint -c ./.eslintrc.js --fix ./**/*.ts",
+    "lint": "yarn run eslint -c ./.eslintrc.js --fix ./src/**/*.ts",
     "nice": "yarn lint && yarn pretty",
-    "pretty": "yarn run prettier --loglevel error --write ./**/*.ts ./**/*.js ./**/*.json"
+    "pretty": "yarn run prettier --loglevel error --write ./src/**/*.ts ./**/*.json"
+  },
+  "dependencies": {
+    "concurrently": "^7.0.0",
+    "nodemon": "^2.0.15",
+    "pg": "^8.7.3",
+    "pg-copy-streams": "^6.0.2",
+    "ts-node": "^10.7.0"
   },
   "devDependencies": {
     "@types/node": "^17.0.22",
@@ -27,12 +35,5 @@
     "prettier": "^2.6.0",
     "tsc": "^2.0.4",
     "typescript": "^4.6.2"
-  },
-  "dependencies": {
-    "concurrently": "^7.0.0",
-    "nodemon": "^2.0.15",
-    "pg": "^8.7.3",
-    "pg-copy-streams": "^6.0.2",
-    "ts-node": "^10.7.0"
   }
 }
