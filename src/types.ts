@@ -16,6 +16,11 @@ export type ColumnMapper = (
   row: Buffer[]
 ) => Buffer;
 
+export interface ColumnMappings {
+  names: string[];
+  mappers: ColumnMapper[];
+}
+
 export interface DbCreds {
   host: string;
   dbname: string;
@@ -33,6 +38,11 @@ export interface MainDumpProps {
   tableMappings: TableColumnMappings;
   inputStream: NodeJS.ReadableStream;
   outputStream: NodeJS.WritableStream;
+}
+
+export interface ParsedCopyStatement {
+  rawColumnList: string;
+  columns: string[];
 }
 
 export enum PgVersion {
