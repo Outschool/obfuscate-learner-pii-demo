@@ -28,11 +28,6 @@ export interface DbCreds {
   username?: string;
 }
 
-export interface DbDumpUploader {
-  outputStream: NodeJS.WritableStream;
-  finalize: (finalHeader: Buffer) => Promise<void>;
-}
-
 export interface MainDumpProps {
   logger: PgLogger;
   tableMappings: TableColumnMappings;

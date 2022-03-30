@@ -67,23 +67,23 @@ export function findColumnMappings(
   }
 
   const { columns } = parseCopyStatement(toc);
-  const mappers: ColumnMapper[] = columns.map((it) => {
-    const foundMapping = tableMapper[it];
-    if (!foundMapping) {
-      console.log(
-        `Warn: Unable to find column mapping for column "${it}" in table "${table}"`
-      );
-      return RETAIN;
-    }
-    return foundMapping;
-  });
+  // const mappers: ColumnMapper[] = columns.map((it) => {
+  //   const foundMapping = tableMapper[it];
+  //   if (!foundMapping) {
+  //     console.log(
+  //       `Warn: Unable to find column mapping for column "${it}" in table "${table}"`
+  //     );
+  //     return RETAIN;
+  //   }
+  //   return foundMapping;
+  // });
 
-  if (mappers.every((f) => f === RETAIN)) {
-    return null;
-  }
+  // if (mappers.every((f) => f === RETAIN)) {
+  //   return null;
+  // }
   return {
     names: columns,
-    mappers: mappers,
+    mappers: [], //mappers,
   };
 }
 

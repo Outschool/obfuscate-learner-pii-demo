@@ -22,7 +22,6 @@ import {
 import { PgCustomFormatter } from "./pgCustom";
 import {
   ColumnMappings,
-  DbDumpUploader,
   MainDumpProps,
   PgLogger,
   PgRowIterable,
@@ -43,6 +42,7 @@ async function run() {
   await client.connect();
   await createTestDb();
   await copyTable();
+  await dbDumpObfuscated();
   await client.end();
 }
 run();
@@ -66,7 +66,7 @@ function copyTable(): AsyncGenerator<Buffer> {
   })();
 }
 
-async function dbDumpObfuscated(uploader: DbDumpUploader) {
+async function dbDumpObfuscated() {
   const currentUser = (await client.query("SELECT current_user"))?.rows[0]
     ?.current_user;
   const dbCreds = {
@@ -82,12 +82,13 @@ async function dbDumpObfuscated(uploader: DbDumpUploader) {
     },
   };
   const pgDump = spawnPgDump(dbCreds, tableMappings);
+  const outputStream = Fs.createWriteStream(PG_DUMP_EXPORT_PATH);
 
   logger("Starting");
-  const finalHeaderBuffer = await obfuscatePgCustomDump({
+  await obfuscatePgCustomDump({
     logger,
     tableMappings,
-    outputStream: uploader.outputStream,
+    outputStream,
     // Perf optimization:
     // add a large intermediate buffer to allow data to flow while processing,
     // since the reader doesn't consume in streaming mode
@@ -95,28 +96,10 @@ async function dbDumpObfuscated(uploader: DbDumpUploader) {
       new PassThrough({ highWaterMark: 20 * ONE_MB })
     ),
   });
-
-  logger("Finalizing");
-  await writeFile(finalHeaderBuffer);
-
   logger("Finished");
 }
 
-function writeFile(finalHeaderBuffer: Buffer): Promise<boolean> {
-  return new Promise((resolve, reject) => {
-    const writableStream = Fs.createWriteStream(PG_DUMP_EXPORT_PATH);
-    writableStream.on("error", reject);
-    writableStream.write(finalHeaderBuffer);
-    writableStream.on("finish", () => {
-      writableStream.end();
-      resolve(true);
-    });
-  });
-}
-
-async function obfuscatePgCustomDump(
-  props: MainDumpProps
-): Promise<Buffer> {
+async function obfuscatePgCustomDump(props: MainDumpProps): Promise<Buffer> {
   const { logger, outputStream, tableMappings } = props;
   const { prelude, reader, head } = await consumeHead(props.inputStream);
   logger("header consumed");
