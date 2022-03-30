@@ -16,7 +16,6 @@
     "concurrently": "^7.0.0",
     "nodemon": "^2.0.15",
     "pg": "^8.7.3",
-    "pg-copy-streams": "^6.0.2",
     "ts-node": "^10.7.0"
   },
   "devDependencies": {
