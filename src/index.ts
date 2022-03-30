@@ -2,7 +2,6 @@ import EventEmitter from "events";
 import Fs from "fs";
 import Path from "path";
 import { Client } from "pg";
-import { to as copyTo } from "pg-copy-streams";
 import { PassThrough, Readable } from "stream";
 import { createDeflate } from "zlib";
 
@@ -29,59 +28,47 @@ import {
   TableColumnMappings,
 } from "./types";
 
-const client = new Client();
+const DEFAULT_DATABASE = "outschool_obfuscate_demo";
 
-const DEFAULT_DATABASE = "obufscate_outschool_pii";
+const DEFAULT_TABLE = "pii_demo";
 
 const PG_DUMP_EXPORT_PATH = Path.resolve("./output/");
+
+const dbCreds = {
+  dbname: DEFAULT_DATABASE,
+  host: "localhost",
+  user: "",
+  password: "",
+};
+
+const client = new Client(dbCreds);
 
 async function run() {
   await client.connect();
   await createTestDb();
-  await copyTable();
   await dbDumpObfuscated();
   await client.end();
 }
 run();
 
 async function createTestDb() {
-  await client.query(`DROP TABLE IF EXISTS ${DEFAULT_DATABASE}`);
+  await client.query(`DROP TABLE IF EXISTS ${DEFAULT_TABLE}`);
+  await client.query(`CREATE TABLE ${DEFAULT_TABLE}(email_address text);`);
   await client.query(
-    `CREATE TEMP TABLE  ${DEFAULT_DATABASE}(email_address text);`
+    `INSERT INTO  ${DEFAULT_TABLE}(email_address) values('myunobfuscatedemail@address.com');`
   );
-  await client.query(
-    `INSERT INTO  ${DEFAULT_DATABASE}(email_address) values('myunobfuscatedemail@address.com');`
-  );
-}
-
-function copyTable(): AsyncGenerator<Buffer> {
-  return (async function* () {
-    const query = "SELECT email_address from _obfuscated_pii";
-    const stream = client.query(copyTo(`COPY (${query}) TO STDOUT`));
-    yield* copyStreamToRows(stream);
-    yield FINAL_DATA_ROW;
-  })();
 }
 
 async function dbDumpObfuscated() {
-  const currentUser = (await client.query("SELECT current_user"))?.rows[0]
-    ?.current_user;
-  const dbCreds = {
-    dbname: DEFAULT_DATABASE,
-    host: "localhost",
-    user: currentUser,
-    password: "",
-  };
   const logger = console.log;
-  const tableMappings = {
-    _obfuscated_pii: {
-      email: replaceEmailBasedOnColumn("uid"),
-    },
+  const tableMappings = {} as any;
+  tableMappings[DEFAULT_TABLE] = {
+    email: replaceEmailBasedOnColumn("uid"),
   };
   const pgDump = spawnPgDump(dbCreds, tableMappings);
   const dumpId = new Date().toISOString().replace(/[:.]/g, "-");
-  const mainFile = `${PG_DUMP_EXPORT_PATH}/dump/${dumpId}-main.dat`;
-  const headerFile = `${PG_DUMP_EXPORT_PATH}/dump/${dumpId}-header-update.dat`;
+  const mainFile = `${PG_DUMP_EXPORT_PATH}/${dumpId}-main.dat`;
+  const headerFile = `${PG_DUMP_EXPORT_PATH}/${dumpId}-header-update.dat`;
   const outputStream = Fs.createWriteStream(mainFile);
 
   logger("Starting");
