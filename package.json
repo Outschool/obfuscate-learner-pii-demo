@@ -4,10 +4,10 @@
   "description": "obfuscate personally identifiable information",
   "license": "MIT",
   "author": "Outschool",
-  "main": "index.ts",
+  "main": "dist/index.js",
   "scripts": {
-    "build": "tsc --build --clean",
-    "dev": "NODE_OPTIONS=--max-old-space-size=4096 concurrently \"tsc --watch\" \"nodemon -q dist/index.js\"",
+    "build": "tsc --build",
+    "dev": "concurrently \"tsc --watch\" \"nodemon -q dist/index.js\"",
     "lint": "yarn run eslint -c ./.eslintrc.js --fix ./src/**/*.ts",
     "nice": "yarn lint && yarn pretty",
     "pretty": "yarn run prettier --loglevel error --write ./src/**/*.ts ./**/*.json"
@@ -20,20 +20,20 @@
     "ts-node": "^10.7.0"
   },
   "devDependencies": {
-    "@types/node": "^17.0.22",
+    "@types/node": "^17.0.23",
     "@types/pg": "^8.6.5",
     "@types/pg-copy-streams": "^1.2.1",
-    "@typescript-eslint/eslint-plugin": "^5.15.0",
-    "@typescript-eslint/parser": "^5.15.0",
-    "eslint": "^8.11.0",
+    "@typescript-eslint/eslint-plugin": "^5.17.0",
+    "@typescript-eslint/parser": "^5.17.0",
+    "eslint": "^8.12.0",
     "eslint-config-standard": "^16.0.3",
     "eslint-plugin-import": "^2.25.4",
-    "eslint-plugin-jest": "^26.1.2",
+    "eslint-plugin-jest": "^26.1.3",
     "eslint-plugin-node": "^11.1.0",
     "eslint-plugin-promise": "^6.0.0",
     "eslint-plugin-simple-import-sort": "^7.0.0",
-    "prettier": "^2.6.0",
+    "prettier": "^2.6.1",
     "tsc": "^2.0.4",
-    "typescript": "^4.6.2"
+    "typescript": "^4.6.3"
   }
 }
