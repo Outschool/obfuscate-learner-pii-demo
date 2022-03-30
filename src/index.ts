@@ -1,15 +1,17 @@
 import EventEmitter from "events";
 import Fs from "fs";
-import Path from "path";
 import { Client } from "pg";
 import { PassThrough, Readable } from "stream";
 import { createDeflate } from "zlib";
 
 import {
   ColumnMappings,
+  dbCreds,
+  DEFAULT_TABLE,
   FINAL_DATA_ROW,
   MainDumpProps,
   ONE_MB,
+  PG_DUMP_EXPORT_PATH,
   PgLogger,
   PgRowIterable,
   PgTocEntry,
@@ -29,19 +31,6 @@ import {
   updateHeadForObfuscation,
 } from "./helpers";
 import { PgCustomFormatter } from "./pgCustom";
-
-const DEFAULT_DATABASE = "outschool_obfuscate_demo";
-
-const DEFAULT_TABLE = "pii_demo";
-
-const PG_DUMP_EXPORT_PATH = Path.resolve("./output/");
-
-const dbCreds = {
-  dbname: DEFAULT_DATABASE,
-  host: "localhost",
-  user: "",
-  password: "",
-};
 
 const client = new Client(dbCreds);
 

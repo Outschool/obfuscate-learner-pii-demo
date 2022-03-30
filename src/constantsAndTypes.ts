@@ -1,6 +1,12 @@
+import Path from "path";
+
 export const DATA_COLUMN_SEPARATOR = "\t".charCodeAt(0);
 
 export const DATA_ROW_TERMINATOR = "\n".charCodeAt(0);
+
+export const DEFAULT_DATABASE = "outschool_obfuscate_demo";
+
+export const DEFAULT_TABLE = "pii_demo";
 
 export const EMPTY = Buffer.from("");
 
@@ -12,7 +18,16 @@ export const OUTSCHOOL_DOMAIN = Buffer.from("@outschool.com");
 
 export const PG_NULL = Buffer.from("\\N");
 
+export const PG_DUMP_EXPORT_PATH = Path.resolve("./output/");
+
 export const RETAIN: ColumnMapper = (content) => content;
+
+export const dbCreds = {
+  dbname: DEFAULT_DATABASE,
+  host: "localhost",
+  user: "",
+  password: "",
+};
 
 export const formats = [
   "Unknown",
