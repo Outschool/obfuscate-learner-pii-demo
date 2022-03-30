@@ -104,7 +104,9 @@ export function findTocEntry(head: PgHead, dumpId: number) {
 }
 
 function parseCopyStatement(toc: PgTocEntry): ParsedCopyStatement {
-  const { copyStmt } = toc;
+  // const { copyStmt } = toc;
+  // TODO: fix injecting of columns
+  const copyStmt = "COPY public.pii_demo (uid, email_address, personal_info, secret_token) FROM stdin;\n";
   if (!copyStmt) {
     throw new Error(
       `Missing copyStatement for ${toc.tag ?? `[dumpid:${toc.dumpId}]`}`
@@ -117,7 +119,6 @@ function parseCopyStatement(toc: PgTocEntry): ParsedCopyStatement {
   if (!match) {
     throw new Error(`"Unable to parse copyStmt: ${copyStmt}`);
   }
-
   const [, rawColumnList] = match;
   const columns = rawColumnList.split(", ").map((it) => {
     // eslint-disable-next-line quotes
