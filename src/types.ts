@@ -111,4 +111,4 @@ export type PgRowIterable = AsyncGenerator<Buffer, void>;
 
 export type TableColumnMappings = Record<string, TableMapper>;
 
-export type TableMapper = Record<string, ColumnMapper>;
+type TableMapper = Record<string, ColumnMapper>;

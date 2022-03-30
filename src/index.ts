@@ -66,7 +66,7 @@ function copyTable(): AsyncGenerator<Buffer> {
   })();
 }
 
-export async function dbDumpObfuscated(uploader: DbDumpUploader) {
+async function dbDumpObfuscated(uploader: DbDumpUploader) {
   const currentUser = (await client.query("SELECT current_user"))?.rows[0]
     ?.current_user;
   const dbCreds = {
@@ -114,7 +114,7 @@ function writeFile(finalHeaderBuffer: Buffer): Promise<boolean> {
   });
 }
 
-export async function obfuscatePgCustomDump(
+async function obfuscatePgCustomDump(
   props: MainDumpProps
 ): Promise<Buffer> {
   const { logger, outputStream, tableMappings } = props;
