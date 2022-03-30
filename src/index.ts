@@ -42,6 +42,7 @@ async function run() {
   await client.connect();
   await createTestDb();
   await dbDumpObfuscated();
+  // TODO: add step to tranform dat file > sql
   await client.end();
 }
 setTimeout(run, 1000);
@@ -77,12 +78,11 @@ async function dbDumpObfuscated() {
   const pgDump = spawnPgDump(dbCreds);
   const dumpId = new Date().toISOString().replace(/[:.]/g, "-");
   const mainFile = `${PG_DUMP_EXPORT_PATH}/${dumpId}-main.dat`;
-  const headerFile = `${PG_DUMP_EXPORT_PATH}/${dumpId}-header-update.dat`;
   const outputStream = Fs.createWriteStream(mainFile);
 
   try {
     logger("Starting");
-    const finalHeader = await obfuscatePgCustomDump({
+    await obfuscatePgCustomDump({
       logger,
       tableMappings,
       outputStream,
@@ -94,28 +94,12 @@ async function dbDumpObfuscated() {
       ),
     });
 
-    await writeHeader(headerFile, finalHeader);
-
     logger("Finished");
   } catch (e) {
     console.error(e);
     // remove files generated during thrown error
     Fs.unlinkSync(mainFile);
-    Fs.unlinkSync(headerFile);
   }
-}
-
-function writeHeader(
-  headerFile: string,
-  finalHeaderBuffer: Buffer
-): Promise<void> {
-  return new Promise((resolve, reject) => {
-    const writableStream = Fs.createWriteStream(headerFile);
-    writableStream.on("error", reject);
-    writableStream.write(finalHeaderBuffer);
-    writableStream.end();
-    writableStream.on("finish", resolve);
-  });
 }
 
 async function obfuscatePgCustomDump(props: MainDumpProps): Promise<Buffer> {
