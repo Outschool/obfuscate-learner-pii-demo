@@ -8,6 +8,7 @@
   "scripts": {
     "build": "tsc --build",
     "dev": "concurrently \"tsc --watch\" \"nodemon -q dist/index.js\"",
+    "dump": "yarn build && node dist/index.js",
     "lint": "yarn run eslint -c ./.eslintrc.js --fix ./src/**/*.ts",
     "nice": "yarn lint && yarn pretty",
     "pretty": "yarn run prettier --loglevel error --write ./src/**/*.ts"
