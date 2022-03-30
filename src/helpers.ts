@@ -82,7 +82,7 @@ export function findColumnMappings(
   }
   return {
     names: columns,
-    mappers: [], //mappers,
+    mappers: mappers,
   };
 }
 
