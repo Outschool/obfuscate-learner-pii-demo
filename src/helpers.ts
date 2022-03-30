@@ -2,21 +2,20 @@ import { spawn } from "child_process";
 import { Writable } from "stream";
 
 import {
-  DATA_COLUMN_SEPARATOR,
-  DATA_ROW_TERMINATOR,
-  OUTSCHOOL_DOMAIN,
-  PG_NULL,
-} from "./constants";
-import { PgCustomReader } from "./pgCustom";
-import {
   ColumnMapper,
   ColumnMappings,
+  DATA_COLUMN_SEPARATOR,
+  DATA_ROW_TERMINATOR,
   DbCreds,
+  OUTSCHOOL_DOMAIN,
   ParsedCopyStatement,
+  PG_NULL,
   PgHead,
   PgTocEntry,
+  RETAIN,
   TableColumnMappings,
-} from "./types";
+} from "./constantsAndTypes";
+import { PgCustomReader } from "./pgCustom";
 
 function bufferEndsWith(buf: Buffer, ending: Buffer) {
   return -1 !== buf.indexOf(ending, buf.byteLength - ending.byteLength);
@@ -67,20 +66,20 @@ export function findColumnMappings(
   }
 
   const { columns } = parseCopyStatement(toc);
-  // const mappers: ColumnMapper[] = columns.map((it) => {
-  //   const foundMapping = tableMapper[it];
-  //   if (!foundMapping) {
-  //     console.log(
-  //       `Warn: Unable to find column mapping for column "${it}" in table "${table}"`
-  //     );
-  //     return RETAIN;
-  //   }
-  //   return foundMapping;
-  // });
+  const mappers: ColumnMapper[] = columns.map((it) => {
+    const foundMapping = tableMapper[it];
+    if (!foundMapping) {
+      console.log(
+        `Warn: Unable to find column mapping for column "${it}" in table "${table}"`
+      );
+      return RETAIN;
+    }
+    return foundMapping;
+  });
 
-  // if (mappers.every((f) => f === RETAIN)) {
-  //   return null;
-  // }
+  if (mappers.every((f) => f === RETAIN)) {
+    return null;
+  }
   return {
     names: columns,
     mappers: [], //mappers,

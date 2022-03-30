@@ -1,14 +1,17 @@
 import { Transform } from "stream";
 
-import { EMPTY, formats, offsetFlag, sections } from "./constants";
 import {
+  EMPTY,
+  formats,
+  offsetFlag,
   PgDataHead,
   PgHead,
   PgOffset,
   PgPrelude,
   PgTocEntry,
   PgVersion,
-} from "./types";
+  sections,
+} from "./constantsAndTypes";
 
 export class PgCustomReader {
   private readonly stream: NodeJS.ReadableStream;

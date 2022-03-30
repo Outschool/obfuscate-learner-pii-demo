@@ -5,7 +5,17 @@ import { Client } from "pg";
 import { PassThrough, Readable } from "stream";
 import { createDeflate } from "zlib";
 
-import { FINAL_DATA_ROW, ONE_MB } from "./constants";
+import {
+  ColumnMappings,
+  FINAL_DATA_ROW,
+  MainDumpProps,
+  ONE_MB,
+  PgLogger,
+  PgRowIterable,
+  PgTocEntry,
+  RETAIN,
+  TableColumnMappings,
+} from "./constantsAndTypes";
 import {
   consumeHead,
   countDataBlocks,
@@ -19,14 +29,6 @@ import {
   updateHeadForObfuscation,
 } from "./helpers";
 import { PgCustomFormatter } from "./pgCustom";
-import {
-  ColumnMappings,
-  MainDumpProps,
-  PgLogger,
-  PgRowIterable,
-  PgTocEntry,
-  TableColumnMappings,
-} from "./types";
 
 const DEFAULT_DATABASE = "outschool_obfuscate_demo";
 
@@ -63,6 +65,7 @@ async function dbDumpObfuscated() {
   const logger = console.log;
   const tableMappings = {} as any;
   tableMappings[DEFAULT_TABLE] = {
+    uid: RETAIN,
     email: replaceEmailBasedOnColumn("uid"),
   };
   const pgDump = spawnPgDump(dbCreds, tableMappings);
