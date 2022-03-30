@@ -33,10 +33,7 @@ const client = new Client();
 
 const DEFAULT_DATABASE = "obufscate_outschool_pii";
 
-const PG_DUMP_EXPORT_PATH = Path.join(
-  __dirname,
-  "output/obfuscated-export.sql"
-);
+const PG_DUMP_EXPORT_PATH = Path.resolve("./output/");
 
 async function run() {
   await client.connect();
@@ -82,10 +79,13 @@ async function dbDumpObfuscated() {
     },
   };
   const pgDump = spawnPgDump(dbCreds, tableMappings);
-  const outputStream = Fs.createWriteStream(PG_DUMP_EXPORT_PATH);
+  const dumpId = new Date().toISOString().replace(/[:.]/g, "-");
+  const mainFile = `${PG_DUMP_EXPORT_PATH}/dump/${dumpId}-main.dat`;
+  const headerFile = `${PG_DUMP_EXPORT_PATH}/dump/${dumpId}-header-update.dat`;
+  const outputStream = Fs.createWriteStream(mainFile);
 
   logger("Starting");
-  await obfuscatePgCustomDump({
+  const finalHeader = await obfuscatePgCustomDump({
     logger,
     tableMappings,
     outputStream,
@@ -96,7 +96,26 @@ async function dbDumpObfuscated() {
       new PassThrough({ highWaterMark: 20 * ONE_MB })
     ),
   });
+
+  await writeHeader(headerFile, finalHeader);
+
   logger("Finished");
+}
+
+function writeHeader(
+  headerFile: string,
+  finalHeaderBuffer: Buffer
+): Promise<boolean> {
+  return new Promise((resolve, reject) => {
+    const writableStream = Fs.createWriteStream(headerFile);
+    writableStream.on("error", reject);
+    writableStream.write(finalHeaderBuffer);
+    writableStream.on("finish", () => {
+      console.log("DONE");
+      writableStream.end();
+      resolve(true);
+    });
+  });
 }
 
 async function obfuscatePgCustomDump(props: MainDumpProps): Promise<Buffer> {
