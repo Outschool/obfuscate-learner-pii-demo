@@ -5,7 +5,7 @@ import { Client } from "pg";
 import { PassThrough, Readable } from "stream";
 import { createDeflate } from "zlib";
 
-import { DATA_ROW_TERMINATOR, FINAL_DATA_ROW, ONE_MB } from "./constants";
+import { FINAL_DATA_ROW, ONE_MB } from "./constants";
 import {
   consumeHead,
   countDataBlocks,
