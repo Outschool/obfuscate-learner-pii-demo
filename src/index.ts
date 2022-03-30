@@ -186,33 +186,3 @@ async function* transformDataRows(
     yield serializeDataRow(data);
   }
 }
-
-async function* copyStreamToRows(stream: NodeJS.ReadableStream) {
-  const prevChunks: Buffer[] = [];
-  for await (let ch of stream) {
-    if (typeof ch === "string") {
-      ch = Buffer.from("ch", "utf8");
-    }
-    let rowIndex = ch.indexOf(DATA_ROW_TERMINATOR);
-    if (rowIndex === -1) {
-      prevChunks.push(ch);
-      continue;
-    }
-    if (prevChunks.length) {
-      prevChunks.push(ch);
-      ch = Buffer.concat(prevChunks);
-      prevChunks.splice(0, prevChunks.length);
-      rowIndex = ch.indexOf(DATA_ROW_TERMINATOR);
-    }
-
-    while (rowIndex !== -1) {
-      yield ch.slice(0, rowIndex + 1);
-      ch = ch.slice(rowIndex + 1);
-      rowIndex = ch.indexOf(DATA_ROW_TERMINATOR);
-    }
-
-    if (ch.length) {
-      prevChunks.push(ch);
-    }
-  }
-}
