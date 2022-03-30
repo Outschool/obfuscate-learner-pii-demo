@@ -2,6 +2,7 @@ import EventEmitter from "events";
 import Fs from "fs";
 import { Client } from "pg";
 import { PassThrough, Readable } from "stream";
+import uuid from "uuid-random";
 import { createDeflate } from "zlib";
 
 import {
@@ -16,6 +17,7 @@ import {
   PgRowIterable,
   PgTocEntry,
   RETAIN,
+  secretInfo,
   TableColumnMappings,
 } from "./constantsAndTypes";
 import {
@@ -25,6 +27,8 @@ import {
   findTocEntry,
   parseDataRow,
   replaceEmailBasedOnColumn,
+  replaceWithNull,
+  replaceWithScrambledText,
   rowCounter,
   serializeDataRow,
   spawnPgDump,
@@ -40,13 +44,24 @@ async function run() {
   await dbDumpObfuscated();
   await client.end();
 }
-run();
+setTimeout(run, 1000);
 
 async function createTestDb() {
   await client.query(`DROP TABLE IF EXISTS ${DEFAULT_TABLE}`);
-  await client.query(`CREATE TABLE ${DEFAULT_TABLE}(email_address text);`);
   await client.query(
-    `INSERT INTO  ${DEFAULT_TABLE}(email_address) values('myunobfuscatedemail@address.com');`
+    `CREATE TABLE ${DEFAULT_TABLE}(uid uuid, email_address text, personal_info text, secret_token uuid);`
+  );
+  await client.query(
+    `INSERT INTO  ${DEFAULT_TABLE}(uid, email_address, personal_info, secret_token) values($1, $2, $3, $4);`,
+    [uuid(), "myunobfuscatedemail@address.com", secretInfo, uuid()]
+  );
+  await client.query(
+    `INSERT INTO  ${DEFAULT_TABLE}(uid, email_address, personal_info, secret_token) values($1, $2, $3, $4);`,
+    [uuid(), "oslearneremail@address.com", secretInfo, uuid()]
+  );
+  await client.query(
+    `INSERT INTO  ${DEFAULT_TABLE}(uid, email_address, personal_info, secret_token) values($1, $2, $3, $4);`,
+    [uuid(), "osparentemail@address.com", secretInfo, uuid()]
   );
 }
 
@@ -55,45 +70,51 @@ async function dbDumpObfuscated() {
   const tableMappings = {} as any;
   tableMappings[DEFAULT_TABLE] = {
     uid: RETAIN,
-    email: replaceEmailBasedOnColumn("uid"),
+    email_address: replaceEmailBasedOnColumn("uid"),
+    personal_info: replaceWithScrambledText,
+    secret_token: replaceWithNull,
   };
-  const pgDump = spawnPgDump(dbCreds, tableMappings);
+  const pgDump = spawnPgDump(dbCreds);
   const dumpId = new Date().toISOString().replace(/[:.]/g, "-");
   const mainFile = `${PG_DUMP_EXPORT_PATH}/${dumpId}-main.dat`;
   const headerFile = `${PG_DUMP_EXPORT_PATH}/${dumpId}-header-update.dat`;
   const outputStream = Fs.createWriteStream(mainFile);
 
-  logger("Starting");
-  const finalHeader = await obfuscatePgCustomDump({
-    logger,
-    tableMappings,
-    outputStream,
-    // Perf optimization:
-    // add a large intermediate buffer to allow data to flow while processing,
-    // since the reader doesn't consume in streaming mode
-    inputStream: pgDump.stdout.pipe(
-      new PassThrough({ highWaterMark: 20 * ONE_MB })
-    ),
-  });
+  try {
+    logger("Starting");
+    const finalHeader = await obfuscatePgCustomDump({
+      logger,
+      tableMappings,
+      outputStream,
+      // Perf optimization:
+      // add a large intermediate buffer to allow data to flow while processing,
+      // since the reader doesn't consume in streaming mode
+      inputStream: pgDump.stdout.pipe(
+        new PassThrough({ highWaterMark: 20 * ONE_MB })
+      ),
+    });
 
-  await writeHeader(headerFile, finalHeader);
+    await writeHeader(headerFile, finalHeader);
 
-  logger("Finished");
+    logger("Finished");
+  } catch (e) {
+    console.error(e);
+    // remove files generated during thrown error
+    Fs.unlinkSync(mainFile);
+    Fs.unlinkSync(headerFile);
+  }
 }
 
 function writeHeader(
   headerFile: string,
   finalHeaderBuffer: Buffer
-): Promise<boolean> {
+): Promise<void> {
   return new Promise((resolve, reject) => {
     const writableStream = Fs.createWriteStream(headerFile);
     writableStream.on("error", reject);
     writableStream.write(finalHeaderBuffer);
-    writableStream.on("finish", () => {
-      console.log("DONE");
-      writableStream.end();
-      resolve(true);
-    });
+    writableStream.end();
+    writableStream.on("finish", resolve);
   });
 }
 
@@ -171,10 +192,10 @@ async function* transformDataRows(
     if (ended) {
       throw new Error("Received data after the content terminator");
     }
+    const data = parseDataRow(row).map((col, ndx, src) => {
+      return columnMappings.mappers[ndx](col, columnMappings.names, src);
+    });
 
-    const data = parseDataRow(row).map((col, ndx, src) =>
-      columnMappings.mappers[ndx](col, columnMappings.names, src)
-    );
     yield serializeDataRow(data);
   }
 }

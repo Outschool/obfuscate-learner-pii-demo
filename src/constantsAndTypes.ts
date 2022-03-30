@@ -25,7 +25,7 @@ export const RETAIN: ColumnMapper = (content) => content;
 export const dbCreds = {
   dbname: DEFAULT_DATABASE,
   host: "localhost",
-  user: "",
+  user: "jmh",
   password: "",
 };
 
@@ -47,6 +47,8 @@ export const sections = [
   "Data",
   "PostData",
 ] as const;
+
+export const secretInfo = "Hello, this my personal secret info";
 
 /**
  * Defines the function signature for transforming table data.

@@ -196,11 +196,24 @@ export function replaceEmailBasedOnColumn(uidColumn: string): ColumnMapper {
     if (bufferEndsWith(content, OUTSCHOOL_DOMAIN)) {
       return content;
     }
-
     const uid = parsePgString(row[columns.indexOf(uidColumn)]);
     return serializePgString(uid + "@blackhole.outschool.com");
   };
 }
+
+export const replaceWithNull: ColumnMapper = () => PG_NULL;
+
+export const replaceWithScrambledText: ColumnMapper = (content) => {
+  const str = parsePgString(content);
+  if (str === null) {
+    return PG_NULL;
+  }
+
+  const result = str
+    .replace(/[A-z]/g, randomLetter)
+    .replace(/[0-9]/g, randomDigit);
+  return serializePgString(result);
+};
 
 function parsePgString(content: Buffer): string | null {
   if (content.equals(PG_NULL)) {
@@ -234,6 +247,14 @@ function parsePgString(content: Buffer): string | null {
   });
 }
 
+function randomLetter() {
+  return Math.floor(Math.random() * 26 + 10).toString(36);
+}
+
+function randomDigit() {
+  return Math.floor(Math.random() * 10).toString(10);
+}
+
 function serializePgString(str: string | null) {
   if (str === null) {
     return PG_NULL;
@@ -251,11 +272,7 @@ function serializePgString(str: string | null) {
   );
 }
 
-export function spawnPgDump(
-  dbCreds: DbCreds,
-  mappings: TableColumnMappings,
-  stdErr?: Writable
-) {
+export function spawnPgDump(dbCreds: DbCreds, stdErr?: Writable) {
   const args = [buildDbUrl(dbCreds), "--format=custom", "--compress=0"];
   const result = spawn("pg_dump", args, {
     stdio: ["ignore", "pipe", "pipe"],
