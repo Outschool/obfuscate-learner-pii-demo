@@ -10,7 +10,7 @@
     "dev": "concurrently \"tsc --watch\" \"nodemon -q dist/index.js\"",
     "lint": "yarn run eslint -c ./.eslintrc.js --fix ./src/**/*.ts",
     "nice": "yarn lint && yarn pretty",
-    "pretty": "yarn run prettier --loglevel error --write ./src/**/*.ts ./**/*.json"
+    "pretty": "yarn run prettier --loglevel error --write ./src/**/*.ts"
   },
   "dependencies": {
     "concurrently": "^7.0.0",
