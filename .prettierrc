@@ -1,0 +1,17 @@
+{
+  "trailingComma": "es5",
+  "overrides": [
+    {
+      "files": "**/OwnershipAreas.ts",
+      "options": {
+        "trailingComma": "none"
+      }
+    }
+  ],
+  "tabWidth": 2,
+  "semi": true,
+  "singleQuote": false,
+  "printWidth": 80,
+  "arrowParens": "avoid",
+  "parser": "typescript"
+}
