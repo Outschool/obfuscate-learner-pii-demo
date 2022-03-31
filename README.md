@@ -30,6 +30,3 @@ yarn install
 ```
 yarn obfuscate
 ```
-
-
-
