@@ -1,7 +1,7 @@
 # Obfuscate Learner Pii Demo
 [![MIT license](https://img.shields.io/badge/License-MIT-blue.svg)](https://lbesson.mit-license.org/)
 
-## Setup ⚒
+## Setup 🛠
 
 ### ✍️ Step 1: Edit .env
 Create an `.env` file from the provided `sample.env` file. Update your database settings to match your local installation.
