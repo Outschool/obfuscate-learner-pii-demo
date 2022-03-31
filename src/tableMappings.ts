@@ -6,7 +6,7 @@ import {
 } from "./helpers";
 
 export const tableMappings = {
-  learner_pii: {
+  outschool_learner_pii: {
     uid: RETAIN,
     email_address: replaceEmailBasedOnColumn("uid"),
     personal_info: replaceWithScrambledText,
