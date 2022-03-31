@@ -16,7 +16,7 @@ export const OUTSCHOOL_DOMAIN = Buffer.from("@outschool.com");
 
 export const PG_NULL = Buffer.from("\\N");
 
-export const PG_DUMP_EXPORT_PATH = Path.resolve("./output/");
+const PG_DUMP_EXPORT_PATH = Path.resolve("./output/");
 
 export const RETAIN: ColumnMapper = (content) => content;
 
@@ -43,6 +43,10 @@ export const sections = [
   "Data",
   "PostData",
 ] as const;
+
+export const obfuscatedSqlFile = `${PG_DUMP_EXPORT_PATH}/obfuscated.sql`;
+
+export const targetDumpFile = `${PG_DUMP_EXPORT_PATH}/db-obfuscation-main.dat`;
 
 /**
  * Defines the function signature for transforming table data.
