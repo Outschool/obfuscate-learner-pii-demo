@@ -20,9 +20,11 @@ const PG_DUMP_EXPORT_PATH = Path.resolve("./output/");
 
 export const RETAIN: ColumnMapper = content => content;
 
-export const dbCreds = {
-  dbname: DEFAULT_DATABASE,
-  host: "localhost",
+export const dbCreds: DbCreds = {
+  dbname: process.env.DB_NAME ?? DEFAULT_DATABASE,
+  host: process.env.DB_HOST ?? "localhost",
+  username: process.env.DB_USER ?? "",
+  password: process.env.DB_PASSWORD ?? ""
 };
 
 export const formats = [

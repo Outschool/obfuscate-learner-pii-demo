@@ -1,3 +1,5 @@
+import "dotenv/config";
+
 import { exec } from "child_process";
 import EventEmitter from "events";
 import Fs from "fs";
@@ -34,10 +36,6 @@ import { PgCustomFormatter } from "./pgCustom";
 import { tableMappings } from "./tableMappings";
 
 const client = new Client(dbCreds);
-
-// TODO
-// env settings
-// abstract table mappings
 
 async function run() {
   await client.connect();
