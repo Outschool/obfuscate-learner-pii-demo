@@ -1,6 +1,11 @@
 # Obfuscate Learner Pii Demo
 [![MIT license](https://img.shields.io/badge/License-MIT-blue.svg)](https://lbesson.mit-license.org/)
 
+## Contributors
+- [Danny Kirchmeier](https://github.com/danthegoodman)
+- [Justin Hernandez](https://github.com/justinhernandez)
+
+
 ## Setup 🛠
 
 ### ✍️ Step 1: Edit .env
