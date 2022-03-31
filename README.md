@@ -30,3 +30,5 @@ yarn install
 ```
 yarn obfuscate
 ```
+
+After running the above 👆 command you should find an obfuscated sql file at `./output/obfuscated.sql`
