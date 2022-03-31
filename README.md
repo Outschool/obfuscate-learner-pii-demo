@@ -5,7 +5,6 @@
 - [Danny Kirchmeier](https://github.com/danthegoodman)
 - [Justin Hernandez](https://github.com/justinhernandez)
 
-
 ## Setup 🛠
 
 ### ✍️ Step 1: Edit .env
