@@ -10,7 +10,6 @@ import {
   DbCreds,
   dbCreds,
   DbDumpUploader,
-  FINAL_DATA_ROW,
   MainDumpProps,
   obfuscatedSqlFile,
   ONE_MB,
@@ -27,13 +26,12 @@ import {
   findColumnMappings,
   findTocEntry,
   localFileDumpUploader,
-  parseDataRow,
   replaceEmailBasedOnColumn,
   replaceWithNull,
   replaceWithScrambledText,
   rowCounter,
-  serializeDataRow,
   spawnPgDump,
+  transformDataRows,
   updateHeadForObfuscation,
 } from "./helpers";
 import { PgCustomFormatter } from "./pgCustom";
@@ -181,26 +179,4 @@ async function obfuscateSingleTable(props: {
   await EventEmitter.once(props.outputStream, "unpipe");
 
   return dataFmtr.getBytesWritten();
-}
-
-async function* transformDataRows(
-  columnMappings: ColumnMappings,
-  dataIterator: AsyncGenerator<Buffer>
-) {
-  let ended = false;
-  for await (const row of dataIterator) {
-    if (row.equals(FINAL_DATA_ROW)) {
-      yield row;
-      ended = true;
-      continue;
-    }
-    if (ended) {
-      throw new Error("Received data after the content terminator");
-    }
-    const data = parseDataRow(row).map((col, ndx, src) =>
-      columnMappings.mappers[ndx](col, columnMappings.names, src)
-    );
-
-    yield serializeDataRow(data);
-  }
 }

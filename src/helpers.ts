@@ -11,6 +11,7 @@ import {
   DATA_ROW_TERMINATOR,
   DbCreds,
   DbDumpUploader,
+  FINAL_DATA_ROW,
   OUTSCHOOL_DOMAIN,
   ParsedCopyStatement,
   PG_NULL,
@@ -154,7 +155,7 @@ function parseCopyStatement(toc: PgTocEntry): ParsedCopyStatement {
   return { rawColumnList, columns };
 }
 
-export function parseDataRow(buf: Buffer): Buffer[] {
+function parseDataRow(buf: Buffer): Buffer[] {
   const parts = [];
   let ndx = 0;
   while (ndx !== -1) {
@@ -186,7 +187,7 @@ export function rowCounter() {
   };
 }
 
-export function serializeDataRow(bufs: Buffer[]): Buffer {
+function serializeDataRow(bufs: Buffer[]): Buffer {
   const totalLength = bufs.length + bufs.reduce((a, v) => a + v.byteLength, 0);
   const result = Buffer.alloc(totalLength);
   let ndx = 0;
@@ -202,14 +203,25 @@ export function serializeDataRow(bufs: Buffer[]): Buffer {
   return result;
 }
 
-export function updateHeadForObfuscation(head: PgHead) {
-  // Signal that we're compressing the data going out and at what level
-  head.compression = 9;
+export async function* transformDataRows(
+  columnMappings: ColumnMappings,
+  dataIterator: AsyncGenerator<Buffer>
+) {
+  let ended = false;
+  for await (const row of dataIterator) {
+    if (row.equals(FINAL_DATA_ROW)) {
+      yield row;
+      ended = true;
+      continue;
+    }
+    if (ended) {
+      throw new Error("Received data after the content terminator");
+    }
+    const data = parseDataRow(row).map((col, ndx, src) =>
+      columnMappings.mappers[ndx](col, columnMappings.names, src)
+    );
 
-  // Ensure the offsets are reset for the first write. They will be updated
-  // as each section is updated.
-  for (const tocEntry of head.tocEntries) {
-    tocEntry.offset = { flag: "Not Set", value: null };
+    yield serializeDataRow(data);
   }
 }
 
@@ -304,4 +316,15 @@ export function spawnPgDump(dbCreds: DbCreds, stdErr?: Writable) {
   });
   result.stderr.pipe(stdErr ?? process.stderr);
   return result;
+}
+
+export function updateHeadForObfuscation(head: PgHead) {
+  // Signal that we're compressing the data going out and at what level
+  head.compression = 9;
+
+  // Ensure the offsets are reset for the first write. They will be updated
+  // as each section is updated.
+  for (const tocEntry of head.tocEntries) {
+    tocEntry.offset = { flag: "Not Set", value: null };
+  }
 }
