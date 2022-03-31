@@ -67,7 +67,7 @@ export class PgCustomReader {
   }
 
   static validateTocEntry(toc: PgTocEntry) {
-    const badDep = toc.deps.find((it) => !it.match(/^\d+$/));
+    const badDep = toc.deps.find(it => !it.match(/^\d+$/));
     if (badDep) {
       throw new Error(`toc.deps has a non-integer value: ${badDep}`);
     }
@@ -274,7 +274,7 @@ export class PgCustomFormatter {
       this.formatString(head.remoteVersion),
       this.formatString(head.pgdumpVersion),
       this.formatInt(head.tocCount),
-      ...head.tocEntries.flatMap((it) => this.formatTocEntry(it)),
+      ...head.tocEntries.flatMap(it => this.formatTocEntry(it)),
     ];
     return Buffer.concat(parts);
   }
@@ -377,7 +377,7 @@ export class PgCustomFormatter {
   }
 
   private formatStringArray(values: string[]): Buffer[] {
-    return [...values.map((it) => this.formatString(it)), this.formatInt(-1)];
+    return [...values.map(it => this.formatString(it)), this.formatInt(-1)];
   }
 
   private formatOffset(value: bigint | null, hasData: boolean) {

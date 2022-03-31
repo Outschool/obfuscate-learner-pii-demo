@@ -51,7 +51,7 @@ export async function consumeHead(inputStream: NodeJS.ReadableStream) {
 }
 
 export function countDataBlocks(head: PgHead) {
-  return head.tocEntries.filter((it) => Boolean(it.dataDumper)).length;
+  return head.tocEntries.filter(it => Boolean(it.dataDumper)).length;
 }
 
 export function findColumnMappings(
@@ -72,7 +72,7 @@ export function findColumnMappings(
   }
 
   const { columns } = parseCopyStatement(toc);
-  const mappers: ColumnMapper[] = columns.map((it) => {
+  const mappers: ColumnMapper[] = columns.map(it => {
     const foundMapping = tableMapper[it];
     if (!foundMapping) {
       console.log(
@@ -83,7 +83,7 @@ export function findColumnMappings(
     return foundMapping;
   });
 
-  if (mappers.every((f) => f === RETAIN)) {
+  if (mappers.every(f => f === RETAIN)) {
     return null;
   }
   return {
@@ -93,7 +93,7 @@ export function findColumnMappings(
 }
 
 export function findTocEntry(head: PgHead, dumpId: number) {
-  const result = head.tocEntries.find((it) => it.dumpId === dumpId);
+  const result = head.tocEntries.find(it => it.dumpId === dumpId);
   if (!result) {
     throw new Error(
       `Data block referenced dumpId ${dumpId} but that tocEntry doesn't exist`
@@ -145,7 +145,7 @@ function parseCopyStatement(toc: PgTocEntry): ParsedCopyStatement {
   }
 
   const [, rawColumnList] = match;
-  const columns = rawColumnList.split(", ").map((it) => {
+  const columns = rawColumnList.split(", ").map(it => {
     // eslint-disable-next-line quotes
     if (it.startsWith(`"`) && it.endsWith(`"`)) {
       return it.slice(1, -1);
@@ -240,7 +240,7 @@ export function replaceEmailBasedOnColumn(uidColumn: string): ColumnMapper {
 
 export const replaceWithNull: ColumnMapper = () => PG_NULL;
 
-export const replaceWithScrambledText: ColumnMapper = (content) => {
+export const replaceWithScrambledText: ColumnMapper = content => {
   const str = parsePgString(content);
   if (str === null) {
     return PG_NULL;
@@ -258,7 +258,7 @@ function parsePgString(content: Buffer): string | null {
   }
   //Note: The docs claim that `\OCT` and `\xHEX` patterns are supported but
   // that they will not be emitted by COPY TO. We trust this claim.
-  return content.toString("utf8").replace(/\\./g, (str) => {
+  return content.toString("utf8").replace(/\\./g, str => {
     if (str === "\\\\") {
       return "\\";
     }

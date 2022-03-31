@@ -18,7 +18,7 @@ export const PG_NULL = Buffer.from("\\N");
 
 const PG_DUMP_EXPORT_PATH = Path.resolve("./output/");
 
-export const RETAIN: ColumnMapper = (content) => content;
+export const RETAIN: ColumnMapper = content => content;
 
 export const dbCreds = {
   dbname: DEFAULT_DATABASE,
