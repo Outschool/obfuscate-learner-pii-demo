@@ -1,8 +1,8 @@
+import { exec } from "child_process";
 import EventEmitter from "events";
 import Fs from "fs";
 import { Client } from "pg";
 import { PassThrough, Readable } from "stream";
-import uuid from "uuid-random";
 import { createDeflate } from "zlib";
 
 import {
@@ -12,13 +12,14 @@ import {
   DbDumpUploader,
   FINAL_DATA_ROW,
   MainDumpProps,
+  obfuscatedSqlFile,
   ONE_MB,
-  PG_DUMP_EXPORT_PATH,
   PgLogger,
   PgRowIterable,
   PgTocEntry,
   RETAIN,
   TableColumnMappings,
+  targetDumpFile,
 } from "./constantsAndTypes";
 import {
   consumeHead,
@@ -42,26 +43,36 @@ const client = new Client(dbCreds);
 async function run() {
   await client.connect();
   await dumpDb();
-  // TODO: add step to tranform dat file > sql
+  await convertDumpToSql();
   await client.end();
 }
 run();
 
 async function dumpDb() {
-  const targetFile = `${PG_DUMP_EXPORT_PATH}/db-obfuscation-main.dat`;
-  console.log(`Running locally, writing to ${targetFile}`);
+  console.log(`Running locally, writing to ${targetDumpFile}`);
 
   try {
     await dbDumpObfuscated(
       (msg: string) => console.log(new Date().toISOString(), msg),
       dbCreds,
-      localFileDumpUploader(targetFile)
+      localFileDumpUploader(targetDumpFile)
     );
   } catch (e) {
     console.error(e);
     // remove files generated during thrown error
-    Fs.unlinkSync(targetFile);
+    Fs.unlinkSync(targetDumpFile);
   }
+}
+
+async function convertDumpToSql(): Promise<void> {
+  return new Promise((resolve, reject) => {
+    exec(`pg_restore ${targetDumpFile} > ${obfuscatedSqlFile}`, function (err) {
+      if (err) {
+        return reject(err);
+      }
+      resolve();
+    });
+  });
 }
 
 async function dbDumpObfuscated(
