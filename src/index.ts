@@ -16,7 +16,6 @@ import {
   PgLogger,
   PgRowIterable,
   PgTocEntry,
-  RETAIN,
   TableColumnMappings,
   targetDumpFile,
 } from "./constantsAndTypes";
@@ -26,17 +25,19 @@ import {
   findColumnMappings,
   findTocEntry,
   localFileDumpUploader,
-  replaceEmailBasedOnColumn,
-  replaceWithNull,
-  replaceWithScrambledText,
   rowCounter,
   spawnPgDump,
   transformDataRows,
   updateHeadForObfuscation,
 } from "./helpers";
 import { PgCustomFormatter } from "./pgCustom";
+import { tableMappings } from "./tableMappings";
 
 const client = new Client(dbCreds);
+
+// TODO
+// env settings
+// abstract table mappings
 
 async function run() {
   await client.connect();
@@ -78,7 +79,6 @@ async function dbDumpObfuscated(
   dbCreds: DbCreds,
   uploader: DbDumpUploader
 ) {
-  const tableMappings = await buildObfuscationTableMappings();
   const pgDump = spawnPgDump(dbCreds);
 
   logger("Starting");
@@ -99,17 +99,6 @@ async function dbDumpObfuscated(
   await uploader.finalize(finalHeaderBuffer);
 
   logger("Finished");
-}
-
-function buildObfuscationTableMappings(): TableColumnMappings {
-  return {
-    learner_pii: {
-      uid: RETAIN,
-      email_address: replaceEmailBasedOnColumn("uid"),
-      personal_info: replaceWithScrambledText,
-      secret_token: replaceWithNull,
-    },
-  };
 }
 
 /**
