@@ -1,4 +1,7 @@
 import { spawn } from "child_process";
+import { once } from "events";
+import { createWriteStream } from "fs";
+import { open } from "fs/promises";
 import { Writable } from "stream";
 
 import {
@@ -7,6 +10,7 @@ import {
   DATA_COLUMN_SEPARATOR,
   DATA_ROW_TERMINATOR,
   DbCreds,
+  DbDumpUploader,
   OUTSCHOOL_DOMAIN,
   ParsedCopyStatement,
   PG_NULL,
@@ -41,6 +45,7 @@ export async function consumeHead(inputStream: NodeJS.ReadableStream) {
 
   const reader = new PgCustomReader(inputStream, prelude);
   const head = await reader.readHead();
+
   return { prelude, reader, head };
 }
 
@@ -103,10 +108,28 @@ export function findTocEntry(head: PgHead, dumpId: number) {
   return result;
 }
 
+export function localFileDumpUploader(outFile: string): DbDumpUploader {
+  const outputStream = createWriteStream(outFile);
+  const contentFinished = once(outputStream, "close");
+
+  return {
+    outputStream,
+    async finalize(finalHeader) {
+      await contentFinished;
+
+      // Overwrite the original header with the new content
+      const f = await open(outFile, "r+");
+      try {
+        await f.write(finalHeader, 0, finalHeader.length);
+      } finally {
+        await f.close();
+      }
+    },
+  };
+}
+
 function parseCopyStatement(toc: PgTocEntry): ParsedCopyStatement {
-  // const { copyStmt } = toc;
-  // TODO: fix injecting of columns
-  const copyStmt = "COPY public.pii_demo (uid, email_address, personal_info, secret_token) FROM stdin;\n";
+  const { copyStmt } = toc;
   if (!copyStmt) {
     throw new Error(
       `Missing copyStatement for ${toc.tag ?? `[dumpid:${toc.dumpId}]`}`
@@ -119,6 +142,7 @@ function parseCopyStatement(toc: PgTocEntry): ParsedCopyStatement {
   if (!match) {
     throw new Error(`"Unable to parse copyStmt: ${copyStmt}`);
   }
+
   const [, rawColumnList] = match;
   const columns = rawColumnList.split(", ").map((it) => {
     // eslint-disable-next-line quotes
