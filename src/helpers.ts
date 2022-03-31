@@ -234,7 +234,7 @@ export function replaceEmailBasedOnColumn(uidColumn: string): ColumnMapper {
       return content;
     }
     const uid = parsePgString(row[columns.indexOf(uidColumn)]);
-    return serializePgString(uid + "@blackhole.outschool.com");
+    return serializePgString(uid + "@obfuscated.outschool.com");
   };
 }
 
