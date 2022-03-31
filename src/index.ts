@@ -7,8 +7,9 @@ import { createDeflate } from "zlib";
 
 import {
   ColumnMappings,
+  DbCreds,
   dbCreds,
-  DEFAULT_TABLE,
+  DbDumpUploader,
   FINAL_DATA_ROW,
   MainDumpProps,
   ONE_MB,
@@ -17,7 +18,6 @@ import {
   PgRowIterable,
   PgTocEntry,
   RETAIN,
-  secretInfo,
   TableColumnMappings,
 } from "./constantsAndTypes";
 import {
@@ -25,6 +25,7 @@ import {
   countDataBlocks,
   findColumnMappings,
   findTocEntry,
+  localFileDumpUploader,
   parseDataRow,
   replaceEmailBasedOnColumn,
   replaceWithNull,
@@ -40,68 +41,78 @@ const client = new Client(dbCreds);
 
 async function run() {
   await client.connect();
-  await createTestDb();
-  await dbDumpObfuscated();
+  await dumpDb();
   // TODO: add step to tranform dat file > sql
   await client.end();
 }
-setTimeout(run, 1000);
+run();
 
-async function createTestDb() {
-  await client.query(`DROP TABLE IF EXISTS ${DEFAULT_TABLE}`);
-  await client.query(
-    `CREATE TABLE ${DEFAULT_TABLE}(uid uuid, email_address text, personal_info text, secret_token uuid);`
-  );
-  await client.query(
-    `INSERT INTO  ${DEFAULT_TABLE}(uid, email_address, personal_info, secret_token) values($1, $2, $3, $4);`,
-    [uuid(), "myunobfuscatedemail@address.com", secretInfo, uuid()]
-  );
-  await client.query(
-    `INSERT INTO  ${DEFAULT_TABLE}(uid, email_address, personal_info, secret_token) values($1, $2, $3, $4);`,
-    [uuid(), "oslearneremail@address.com", secretInfo, uuid()]
-  );
-  await client.query(
-    `INSERT INTO  ${DEFAULT_TABLE}(uid, email_address, personal_info, secret_token) values($1, $2, $3, $4);`,
-    [uuid(), "osparentemail@address.com", secretInfo, uuid()]
-  );
-}
-
-async function dbDumpObfuscated() {
-  const logger = console.log;
-  const tableMappings = {} as any;
-  tableMappings[DEFAULT_TABLE] = {
-    uid: RETAIN,
-    email_address: replaceEmailBasedOnColumn("uid"),
-    personal_info: replaceWithScrambledText,
-    secret_token: replaceWithNull,
-  };
-  const pgDump = spawnPgDump(dbCreds);
-  const dumpId = new Date().toISOString().replace(/[:.]/g, "-");
-  const mainFile = `${PG_DUMP_EXPORT_PATH}/${dumpId}-main.dat`;
-  const outputStream = Fs.createWriteStream(mainFile);
+async function dumpDb() {
+  const targetFile = `${PG_DUMP_EXPORT_PATH}/db-obfuscation-main.dat`;
+  console.log(`Running locally, writing to ${targetFile}`);
 
   try {
-    logger("Starting");
-    await obfuscatePgCustomDump({
-      logger,
-      tableMappings,
-      outputStream,
-      // Perf optimization:
-      // add a large intermediate buffer to allow data to flow while processing,
-      // since the reader doesn't consume in streaming mode
-      inputStream: pgDump.stdout.pipe(
-        new PassThrough({ highWaterMark: 20 * ONE_MB })
-      ),
-    });
-
-    logger("Finished");
+    await dbDumpObfuscated(
+      (msg: string) => console.log(new Date().toISOString(), msg),
+      dbCreds,
+      localFileDumpUploader(targetFile)
+    );
   } catch (e) {
     console.error(e);
     // remove files generated during thrown error
-    Fs.unlinkSync(mainFile);
+    Fs.unlinkSync(targetFile);
   }
 }
 
+async function dbDumpObfuscated(
+  logger: (msg: string) => void,
+  dbCreds: DbCreds,
+  uploader: DbDumpUploader
+) {
+  const tableMappings = await buildObfuscationTableMappings();
+  const pgDump = spawnPgDump(dbCreds);
+
+  logger("Starting");
+  const finalHeaderBuffer = await obfuscatePgCustomDump({
+    logger,
+    tableMappings,
+    outputStream: uploader.outputStream,
+
+    // Perf optimization:
+    // add a large intermediate buffer to allow data to flow while processing,
+    // since the reader doesn't consume in streaming mode
+    inputStream: pgDump.stdout.pipe(
+      new PassThrough({ highWaterMark: 20 * ONE_MB })
+    ),
+  });
+
+  logger("Finalizing");
+  await uploader.finalize(finalHeaderBuffer);
+
+  logger("Finished");
+}
+
+function buildObfuscationTableMappings(): TableColumnMappings {
+  return {
+    learner_pii: {
+      uid: RETAIN,
+      email_address: replaceEmailBasedOnColumn("uid"),
+      personal_info: replaceWithScrambledText,
+      secret_token: replaceWithNull,
+    },
+  };
+}
+
+/**
+ * Takes a 'pg_dump --format=custom' stream and obfuscates the data.
+ *
+ * The data is streamed to avoid excessive memory or file system usage for
+ * large tables.
+ *
+ * A final buffer is returned with an updated file header. This buffer
+ * may be used to overwrite the beginning of the output stream. Doing so
+ * will enable pg_restore to load tables in parallel.
+ */
 async function obfuscatePgCustomDump(props: MainDumpProps): Promise<Buffer> {
   const { logger, outputStream, tableMappings } = props;
   const { prelude, reader, head } = await consumeHead(props.inputStream);
@@ -147,7 +158,6 @@ async function obfuscateSingleTable(props: {
   toc.offset = { flag: "Set", value: BigInt(props.dataStartPos) };
   const dataFmtr = props.formatter.createDataBlockFormatter(toc);
   const rowCounts = rowCounter();
-
   let iterator = rowCounts.iterator(props.dataRows);
   const columnMappings = findColumnMappings(props.tableMappings, toc);
   iterator = transformDataRows(<ColumnMappings>columnMappings, iterator);
@@ -176,9 +186,9 @@ async function* transformDataRows(
     if (ended) {
       throw new Error("Received data after the content terminator");
     }
-    const data = parseDataRow(row).map((col, ndx, src) => {
-      return columnMappings.mappers[ndx](col, columnMappings.names, src);
-    });
+    const data = parseDataRow(row).map((col, ndx, src) =>
+      columnMappings.mappers[ndx](col, columnMappings.names, src)
+    );
 
     yield serializeDataRow(data);
   }
