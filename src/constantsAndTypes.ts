@@ -4,9 +4,7 @@ export const DATA_COLUMN_SEPARATOR = "\t".charCodeAt(0);
 
 export const DATA_ROW_TERMINATOR = "\n".charCodeAt(0);
 
-export const DEFAULT_DATABASE = "outschool_obfuscate_demo";
-
-export const DEFAULT_TABLE = "pii_demo";
+const DEFAULT_DATABASE = "outschool_obfuscate_demo";
 
 export const EMPTY = Buffer.from("");
 
@@ -25,8 +23,6 @@ export const RETAIN: ColumnMapper = (content) => content;
 export const dbCreds = {
   dbname: DEFAULT_DATABASE,
   host: "localhost",
-  user: "jmh",
-  password: "",
 };
 
 export const formats = [
@@ -47,8 +43,6 @@ export const sections = [
   "Data",
   "PostData",
 ] as const;
-
-export const secretInfo = "Hello, this my personal secret info";
 
 /**
  * Defines the function signature for transforming table data.
@@ -76,6 +70,11 @@ export interface DbCreds {
   dbname: string;
   password?: string;
   username?: string;
+}
+
+export interface DbDumpUploader {
+  outputStream: NodeJS.WritableStream;
+  finalize: (finalHeader: Buffer) => Promise<void>;
 }
 
 export interface MainDumpProps {
