@@ -1,5 +1,3 @@
-DROP DATABASE IF EXISTS outschool_obfuscate_demo;
-CREATE DATABASE outschool_obfuscate_demo;
 DROP TABLE IF EXISTS learner_pii;
 CREATE TABLE learner_pii(uid uuid, email_address text, personal_info text, secret_token uuid);
 INSERT INTO  learner_pii(uid, email_address, personal_info, secret_token) values('8260c4a6-d9a7-40af-bdb1-7ada809faff6', 'myunobfuscatedemail@address.com', 'Hello, this my personal secret info', '7690f44b-e67f-4af6-a1bd-badb1f114ad2');
