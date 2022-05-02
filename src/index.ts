@@ -85,7 +85,7 @@ async function obfuscateDbExport(
   const pgDump = spawnPgDump(dbCreds);
 
   logger("Starting");
-  const finalHeaderBuffer = await obfuscatePgCustomDump({
+  const finalHeaderBuffer = await obfuscatePgCustomExport({
     logger,
     tableMappings,
     outputStream: uploader.outputStream,
@@ -113,7 +113,7 @@ async function obfuscateDbExport(
  * may be used to overwrite the beginning of the output stream. Doing so
  * will enable pg_restore to load tables in parallel.
  */
-async function obfuscatePgCustomDump(props: MainDumpProps): Promise<Buffer> {
+async function obfuscatePgCustomExport(props: MainDumpProps): Promise<Buffer> {
   const { logger, outputStream, tableMappings } = props;
   const { prelude, reader, head } = await consumeHead(props.inputStream);
   logger("header consumed");
