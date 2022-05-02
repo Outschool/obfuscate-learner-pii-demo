@@ -5,22 +5,24 @@ import { open } from "fs/promises";
 import { Writable } from "stream";
 
 import {
-  ColumnMapper,
-  ColumnMappings,
   DATA_COLUMN_SEPARATOR,
   DATA_ROW_TERMINATOR,
-  DbCreds,
-  DbDumpUploader,
   FINAL_DATA_ROW,
   OUTSCHOOL_DOMAIN,
-  ParsedCopyStatement,
   PG_NULL,
+  RETAIN,
+} from "./constants";
+import { PgCustomReader } from "./pgCustom";
+import {
+  ColumnMapper,
+  ColumnMappings,
+  DbCreds,
+  DbDumpUploader,
+  ParsedCopyStatement,
   PgHead,
   PgTocEntry,
-  RETAIN,
   TableColumnMappings,
-} from "./constantsAndTypes";
-import { PgCustomReader } from "./pgCustom";
+} from "./types";
 
 function bufferEndsWith(buf: Buffer, ending: Buffer) {
   return -1 !== buf.indexOf(ending, buf.byteLength - ending.byteLength);

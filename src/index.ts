@@ -8,19 +8,12 @@ import { PassThrough, Readable } from "stream";
 import { createDeflate } from "zlib";
 
 import {
-  ColumnMappings,
-  DbCreds,
   dbCreds,
-  DbDumpUploader,
-  MainDumpProps,
   obfuscatedSqlFile,
   ONE_MB,
-  PgLogger,
-  PgRowIterable,
-  PgTocEntry,
-  TableColumnMappings,
   targetDumpFile,
-} from "./constantsAndTypes";
+} from "./constants";
+import { PgCustomFormatter } from "./pgCustom";
 import {
   consumeHead,
   countDataBlocks,
@@ -31,26 +24,37 @@ import {
   spawnPgDump,
   transformDataRows,
   updateHeadForObfuscation,
-} from "./helpers";
-import { PgCustomFormatter } from "./pgCustom";
+} from "./shared";
 import { tableMappings } from "./tableMappings";
+import {
+  ColumnMappings,
+  DbCreds,
+  DbDumpUploader,
+  MainDumpProps,
+  PgLogger,
+  PgRowIterable,
+  PgTocEntry,
+  TableColumnMappings,
+} from "./types";
 
+// setup client
 const client = new Client(dbCreds);
 
 async function run() {
+  const logger = (msg: string) => console.log(new Date().toISOString(), msg);
   await client.connect();
-  await dumpDb();
-  await convertDumpToSql();
+  await exportDb(logger);
+  await convertExportToSql(logger);
   await client.end();
 }
 run();
 
-async function dumpDb() {
+async function exportDb(logger: PgLogger) {
   console.log(`Running locally, writing to ${targetDumpFile}`);
 
   try {
-    await dbDumpObfuscated(
-      (msg: string) => console.log(new Date().toISOString(), msg),
+    await obfuscateDbExport(
+      logger,
       dbCreds,
       localFileDumpUploader(targetDumpFile)
     );
@@ -61,7 +65,8 @@ async function dumpDb() {
   }
 }
 
-async function convertDumpToSql(): Promise<void> {
+async function convertExportToSql(logger: PgLogger): Promise<void> {
+  logger("Converting export to sql");
   return new Promise((resolve, reject) => {
     exec(`pg_restore ${targetDumpFile} > ${obfuscatedSqlFile}`, function (err) {
       if (err) {
@@ -72,7 +77,7 @@ async function convertDumpToSql(): Promise<void> {
   });
 }
 
-async function dbDumpObfuscated(
+async function obfuscateDbExport(
   logger: (msg: string) => void,
   dbCreds: DbCreds,
   uploader: DbDumpUploader
@@ -84,7 +89,6 @@ async function dbDumpObfuscated(
     logger,
     tableMappings,
     outputStream: uploader.outputStream,
-
     // Perf optimization:
     // add a large intermediate buffer to allow data to flow while processing,
     // since the reader doesn't consume in streaming mode
