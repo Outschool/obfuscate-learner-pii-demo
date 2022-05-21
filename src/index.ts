@@ -65,18 +65,6 @@ async function exportDb(logger: PgLogger) {
   }
 }
 
-async function convertExportToSql(logger: PgLogger): Promise<void> {
-  logger("Converting export to sql");
-  return new Promise((resolve, reject) => {
-    exec(`pg_restore ${targetDumpFile} > ${obfuscatedSqlFile}`, function (err) {
-      if (err) {
-        return reject(err);
-      }
-      resolve();
-    });
-  });
-}
-
 async function obfuscateDbExport(
   logger: (msg: string) => void,
   dbCreds: DbCreds,
@@ -170,4 +158,16 @@ async function obfuscateSingleTable(props: {
   await EventEmitter.once(props.outputStream, "unpipe");
 
   return dataFmtr.getBytesWritten();
+}
+
+async function convertExportToSql(logger: PgLogger): Promise<void> {
+  logger("Converting export to sql");
+  return new Promise((resolve, reject) => {
+    exec(`pg_restore ${targetDumpFile} > ${obfuscatedSqlFile}`, function (err) {
+      if (err) {
+        return reject(err);
+      }
+      resolve();
+    });
+  });
 }
