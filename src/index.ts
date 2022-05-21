@@ -44,12 +44,11 @@ async function run() {
   await exportDb(logger);
   await convertExportToSql(logger);
   await client.end();
+  logger(`Output file: ${targetDumpFile}`);
 }
 run();
 
 async function exportDb(logger: PgLogger) {
-  logger(`Output file: ${targetDumpFile}`);
-
   try {
     await obfuscateDbExport(
       logger,
