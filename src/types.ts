@@ -128,4 +128,13 @@ export type PgRowIterable = AsyncGenerator<Buffer, void>;
 
 export type TableColumnMappings = Record<string, TableMapper>;
 
+export type TableDumpProps = {
+  logger: PgLogger;
+  dataStartPos: number;
+  toc: PgTocEntry;
+  dataRows: PgRowIterable;
+  tableMappings: TableColumnMappings;
+  outputStream: NodeJS.WritableStream;
+};
+
 type TableMapper = Record<string, ColumnMapper>;
