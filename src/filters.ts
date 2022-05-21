@@ -1,7 +1,7 @@
 import { OUTSCHOOL_DOMAIN, PG_NULL } from "./constants";
 import { ColumnMapper } from "./types";
 
-export function replaceEmailBasedOnColumn(uidColumn: string): ColumnMapper {
+export function replaceEmailWithColumn(uidColumn: string): ColumnMapper {
   return (content, columns, row) => {
     if (content.equals(PG_NULL)) {
       return PG_NULL;
