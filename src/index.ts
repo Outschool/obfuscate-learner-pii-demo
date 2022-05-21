@@ -32,9 +32,7 @@ import {
   DbDumpUploader,
   MainDumpProps,
   PgLogger,
-  PgRowIterable,
-  PgTocEntry,
-  TableColumnMappings,
+  TableDumpProps,
 } from "./types";
 
 // setup client
@@ -101,14 +99,17 @@ async function obfuscateDbExport(
  * may be used to overwrite the beginning of the output stream. Doing so
  * will enable pg_restore to load tables in parallel.
  */
-async function obfuscatePgCustomExport(props: MainDumpProps): Promise<Buffer> {
-  const { logger, outputStream, tableMappings } = props;
-  const { prelude, reader, head } = await consumeHead(props.inputStream);
+async function obfuscatePgCustomExport({
+  logger,
+  inputStream,
+  outputStream,
+  tableMappings,
+}: MainDumpProps): Promise<Buffer> {
+  const { prelude, reader, head } = await consumeHead(inputStream);
   logger("Header consumed");
   updateHeadForObfuscation(head);
 
   const formatter = new PgCustomFormatter(prelude);
-
   const initialHeader = formatter.formatFileHeader(prelude, head);
   outputStream.write(initialHeader);
 
@@ -133,29 +134,29 @@ async function obfuscatePgCustomExport(props: MainDumpProps): Promise<Buffer> {
   return formatter.formatFileHeader(prelude, head);
 }
 
-async function obfuscateSingleTable(props: {
-  logger: PgLogger;
-  dataStartPos: number;
-  toc: PgTocEntry;
-  dataRows: PgRowIterable;
+async function obfuscateSingleTable({
+  dataStartPos,
+  dataRows,
+  formatter,
+  outputStream,
+  tableMappings,
+  toc,
+}: TableDumpProps & {
   formatter: PgCustomFormatter;
-  tableMappings: TableColumnMappings;
-  outputStream: NodeJS.WritableStream;
 }) {
-  const { toc } = props;
-  toc.offset = { flag: "Set", value: BigInt(props.dataStartPos) };
-  const dataFmtr = props.formatter.createDataBlockFormatter(toc);
+  toc.offset = { flag: "Set", value: BigInt(dataStartPos) };
+  const dataFmtr = formatter.createDataBlockFormatter(toc);
   const rowCounts = rowCounter();
-  let iterator = rowCounts.iterator(props.dataRows);
-  const columnMappings = findColumnMappings(props.tableMappings, toc);
+  let iterator = rowCounts.iterator(dataRows);
+  const columnMappings = findColumnMappings(tableMappings, toc);
   iterator = transformDataRows(<ColumnMappings>columnMappings, iterator);
 
   Readable.from(iterator, { objectMode: true })
     .pipe(createDeflate({ level: 9, memLevel: 9 }))
     .pipe(dataFmtr.transformStream)
-    .pipe(props.outputStream, { end: false });
+    .pipe(outputStream, { end: false });
 
-  await EventEmitter.once(props.outputStream, "unpipe");
+  await EventEmitter.once(outputStream, "unpipe");
 
   return dataFmtr.getBytesWritten();
 }
