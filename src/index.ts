@@ -48,7 +48,7 @@ async function run() {
 run();
 
 async function exportDb(logger: PgLogger) {
-  console.log(`Running locally, writing to ${targetDumpFile}`);
+  logger(`Output file: ${targetDumpFile}`);
 
   try {
     await obfuscateDbExport(
@@ -113,9 +113,11 @@ async function obfuscatePgCustomExport({
   const initialHeader = formatter.formatFileHeader(prelude, head);
   outputStream.write(initialHeader);
 
-  const dataBlockCount = countDataBlocks(head);
+  const tableCount = countDataBlocks(head);
+  logger(`Exporting ${tableCount} table(s)`);
+
   let dataStartPos = initialHeader.byteLength;
-  for (let i = 0; i < dataBlockCount; i++) {
+  for (let i = 0; i < tableCount; i++) {
     const dataHead = await reader.readDataBlockHead();
     const bytesWritten = await obfuscateSingleTable({
       logger,
