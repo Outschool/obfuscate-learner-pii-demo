@@ -70,7 +70,7 @@ async function obfuscateDbExport(
 ) {
   const pgDump = spawnPgDump(dbCreds);
 
-  logger("Starting");
+  logger("Starting export");
   const finalHeaderBuffer = await obfuscatePgCustomExport({
     logger,
     tableMappings,
@@ -83,10 +83,10 @@ async function obfuscateDbExport(
     ),
   });
 
-  logger("Finalizing");
+  logger("Finalizing export");
   await uploader.finalize(finalHeaderBuffer);
 
-  logger("Finished");
+  logger("Finished export");
 }
 
 /**
@@ -114,7 +114,7 @@ async function obfuscatePgCustomExport({
   outputStream.write(initialHeader);
 
   const tableCount = countDataBlocks(head);
-  logger(`Exporting ${tableCount} table(s)`);
+  logger(`Table export count: ${tableCount}`);
 
   let dataStartPos = initialHeader.byteLength;
   for (let i = 0; i < tableCount; i++) {
