@@ -116,7 +116,7 @@ async function obfuscateDbExport(
 async function obfuscatePgCustomExport(props: MainDumpProps): Promise<Buffer> {
   const { logger, outputStream, tableMappings } = props;
   const { prelude, reader, head } = await consumeHead(props.inputStream);
-  logger("header consumed");
+  logger("Header consumed");
   updateHeadForObfuscation(head);
 
   const formatter = new PgCustomFormatter(prelude);

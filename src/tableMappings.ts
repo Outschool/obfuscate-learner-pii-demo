@@ -3,7 +3,7 @@ import {
   replaceEmailBasedOnColumn,
   replaceWithNull,
   replaceWithScrambledText,
-} from "./shared";
+} from "./filters";
 
 export const tableMappings = {
   outschool_learner_pii: {

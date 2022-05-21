@@ -8,7 +8,6 @@ import {
   DATA_COLUMN_SEPARATOR,
   DATA_ROW_TERMINATOR,
   FINAL_DATA_ROW,
-  OUTSCHOOL_DOMAIN,
   PG_NULL,
   RETAIN,
 } from "./constants";
@@ -24,7 +23,7 @@ import {
   TableColumnMappings,
 } from "./types";
 
-function bufferEndsWith(buf: Buffer, ending: Buffer) {
+export function bufferEndsWith(buf: Buffer, ending: Buffer) {
   return -1 !== buf.indexOf(ending, buf.byteLength - ending.byteLength);
 }
 
@@ -227,34 +226,7 @@ export async function* transformDataRows(
   }
 }
 
-export function replaceEmailBasedOnColumn(uidColumn: string): ColumnMapper {
-  return (content, columns, row) => {
-    if (content.equals(PG_NULL)) {
-      return PG_NULL;
-    }
-    if (bufferEndsWith(content, OUTSCHOOL_DOMAIN)) {
-      return content;
-    }
-    const uid = parsePgString(row[columns.indexOf(uidColumn)]);
-    return serializePgString(uid + "@obfuscated.outschool.com");
-  };
-}
-
-export const replaceWithNull: ColumnMapper = () => PG_NULL;
-
-export const replaceWithScrambledText: ColumnMapper = content => {
-  const str = parsePgString(content);
-  if (str === null) {
-    return PG_NULL;
-  }
-
-  const result = str
-    .replace(/[A-z]/g, randomLetter)
-    .replace(/[0-9]/g, randomDigit);
-  return serializePgString(result);
-};
-
-function parsePgString(content: Buffer): string | null {
+export function parsePgString(content: Buffer): string | null {
   if (content.equals(PG_NULL)) {
     return null;
   }
@@ -286,15 +258,15 @@ function parsePgString(content: Buffer): string | null {
   });
 }
 
-function randomLetter() {
+export function randomLetter() {
   return Math.floor(Math.random() * 26 + 10).toString(36);
 }
 
-function randomDigit() {
+export function randomDigit() {
   return Math.floor(Math.random() * 10).toString(10);
 }
 
-function serializePgString(str: string | null) {
+export function serializePgString(str: string | null) {
   if (str === null) {
     return PG_NULL;
   }
