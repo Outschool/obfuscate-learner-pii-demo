@@ -1,14 +1,14 @@
 import { RETAIN } from "./constants";
 import {
-  replaceEmailBasedOnColumn,
+  replaceEmailWithColumn,
   replaceWithNull,
   replaceWithScrambledText,
-} from "./shared";
+} from "./filters";
 
 export const tableMappings = {
   outschool_learner_pii: {
     uid: RETAIN,
-    email_address: replaceEmailBasedOnColumn("uid"),
+    email_address: replaceEmailWithColumn("uid"),
     personal_info: replaceWithScrambledText,
     secret_token: replaceWithNull,
   },

@@ -32,9 +32,7 @@ import {
   DbDumpUploader,
   MainDumpProps,
   PgLogger,
-  PgRowIterable,
-  PgTocEntry,
-  TableColumnMappings,
+  TableDumpProps,
 } from "./types";
 
 // setup client
@@ -46,12 +44,11 @@ async function run() {
   await exportDb(logger);
   await convertExportToSql(logger);
   await client.end();
+  logger(`Output file: ${targetDumpFile}`);
 }
 run();
 
 async function exportDb(logger: PgLogger) {
-  console.log(`Running locally, writing to ${targetDumpFile}`);
-
   try {
     await obfuscateDbExport(
       logger,
@@ -65,18 +62,6 @@ async function exportDb(logger: PgLogger) {
   }
 }
 
-async function convertExportToSql(logger: PgLogger): Promise<void> {
-  logger("Converting export to sql");
-  return new Promise((resolve, reject) => {
-    exec(`pg_restore ${targetDumpFile} > ${obfuscatedSqlFile}`, function (err) {
-      if (err) {
-        return reject(err);
-      }
-      resolve();
-    });
-  });
-}
-
 async function obfuscateDbExport(
   logger: (msg: string) => void,
   dbCreds: DbCreds,
@@ -84,7 +69,7 @@ async function obfuscateDbExport(
 ) {
   const pgDump = spawnPgDump(dbCreds);
 
-  logger("Starting");
+  logger("Starting export");
   const finalHeaderBuffer = await obfuscatePgCustomExport({
     logger,
     tableMappings,
@@ -97,10 +82,10 @@ async function obfuscateDbExport(
     ),
   });
 
-  logger("Finalizing");
+  logger("Finalizing export");
   await uploader.finalize(finalHeaderBuffer);
 
-  logger("Finished");
+  logger("Finished export");
 }
 
 /**
@@ -113,20 +98,25 @@ async function obfuscateDbExport(
  * may be used to overwrite the beginning of the output stream. Doing so
  * will enable pg_restore to load tables in parallel.
  */
-async function obfuscatePgCustomExport(props: MainDumpProps): Promise<Buffer> {
-  const { logger, outputStream, tableMappings } = props;
-  const { prelude, reader, head } = await consumeHead(props.inputStream);
-  logger("header consumed");
+async function obfuscatePgCustomExport({
+  logger,
+  inputStream,
+  outputStream,
+  tableMappings,
+}: MainDumpProps): Promise<Buffer> {
+  const { prelude, reader, head } = await consumeHead(inputStream);
+  logger("Header consumed");
   updateHeadForObfuscation(head);
 
   const formatter = new PgCustomFormatter(prelude);
-
   const initialHeader = formatter.formatFileHeader(prelude, head);
   outputStream.write(initialHeader);
 
-  const dataBlockCount = countDataBlocks(head);
+  const tableCount = countDataBlocks(head);
+  logger(`Table export count: ${tableCount}`);
+
   let dataStartPos = initialHeader.byteLength;
-  for (let i = 0; i < dataBlockCount; i++) {
+  for (let i = 0; i < tableCount; i++) {
     const dataHead = await reader.readDataBlockHead();
     const bytesWritten = await obfuscateSingleTable({
       logger,
@@ -145,29 +135,41 @@ async function obfuscatePgCustomExport(props: MainDumpProps): Promise<Buffer> {
   return formatter.formatFileHeader(prelude, head);
 }
 
-async function obfuscateSingleTable(props: {
-  logger: PgLogger;
-  dataStartPos: number;
-  toc: PgTocEntry;
-  dataRows: PgRowIterable;
+async function obfuscateSingleTable({
+  dataStartPos,
+  dataRows,
+  formatter,
+  outputStream,
+  tableMappings,
+  toc,
+}: TableDumpProps & {
   formatter: PgCustomFormatter;
-  tableMappings: TableColumnMappings;
-  outputStream: NodeJS.WritableStream;
 }) {
-  const { toc } = props;
-  toc.offset = { flag: "Set", value: BigInt(props.dataStartPos) };
-  const dataFmtr = props.formatter.createDataBlockFormatter(toc);
+  toc.offset = { flag: "Set", value: BigInt(dataStartPos) };
+  const dataFmtr = formatter.createDataBlockFormatter(toc);
   const rowCounts = rowCounter();
-  let iterator = rowCounts.iterator(props.dataRows);
-  const columnMappings = findColumnMappings(props.tableMappings, toc);
+  let iterator = rowCounts.iterator(dataRows);
+  const columnMappings = findColumnMappings(tableMappings, toc);
   iterator = transformDataRows(<ColumnMappings>columnMappings, iterator);
 
   Readable.from(iterator, { objectMode: true })
     .pipe(createDeflate({ level: 9, memLevel: 9 }))
     .pipe(dataFmtr.transformStream)
-    .pipe(props.outputStream, { end: false });
+    .pipe(outputStream, { end: false });
 
-  await EventEmitter.once(props.outputStream, "unpipe");
+  await EventEmitter.once(outputStream, "unpipe");
 
   return dataFmtr.getBytesWritten();
+}
+
+async function convertExportToSql(logger: PgLogger): Promise<void> {
+  logger("Converting export to sql");
+  return new Promise((resolve, reject) => {
+    exec(`pg_restore ${targetDumpFile} > ${obfuscatedSqlFile}`, function (err) {
+      if (err) {
+        return reject(err);
+      }
+      resolve();
+    });
+  });
 }
