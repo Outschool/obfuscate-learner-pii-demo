@@ -71,6 +71,7 @@ function randomLetter() {
 function randomDigit() {
   return Math.floor(Math.random() * 10).toString(10);
 }
+
 function serializePgString(str: string | null) {
   if (str === null) {
     return PG_NULL;
