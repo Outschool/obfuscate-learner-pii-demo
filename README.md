@@ -1,5 +1,5 @@
-# Obfuscate Learner Pii Demo
-[![MIT license](https://img.shields.io/badge/License-MIT-blue.svg)](https://lbesson.mit-license.org/)
+# [Obfuscate Learner Pii Demo](https://gitlab.com/outschool-eng/growth-pod/obfuscate-learner-pii-demo)
+[![MIT license](https://img.shields.io/badge/License-MIT-blue.svg)](https://mit-license.org/)
 
 ## Contributors
 - [Danny Kirchmeier](https://github.com/danthegoodman) - Code
@@ -8,7 +8,7 @@
 ## Setup 🛠
 
 ### ✍️ Step 1: Edit .env
-Create an `.env` file from the provided `sample.env` file. Update your database settings to match your local installation.
+Create an `.env` file from the provided [`sample.env`](https://gitlab.com/outschool-eng/growth-pod/obfuscate-learner-pii-demo/-/blob/main/sample.env) file. Update your database settings to match your local installation.
 
 ```
 DB_NAME=outschool_obfuscate_demo
@@ -17,11 +17,17 @@ DB_USER=outschool
 DB_PASSWORD=mypassword
 ```
 
-### 🌱 Step 2: Import seed data
-Import the provided seed sql file into your database.
+_*hint:_ you can create a new `.env` file by running the following command from the root project folder:
 
 ```
-psql -U outschool --password -h 127.0.0.1 -d outschool_obfuscate_demo -a -f seedData.sql
+cp ./sample.env ./.env
+```
+
+### 🌱 Step 2: Import seed data
+Import the provided [`seed_data.sql`](https://gitlab.com/outschool-eng/growth-pod/obfuscate-learner-pii-demo/-/blob/main/seed_data.sql) file into your database.
+
+```
+psql -U outschool --password -h 127.0.0.1 -d outschool_obfuscate_demo -a -f ./seed_data.sql
 ```
 
 ### 📦 Step 3: Install packages
@@ -29,10 +35,17 @@ psql -U outschool --password -h 127.0.0.1 -d outschool_obfuscate_demo -a -f seed
 yarn install
 ```
 
+_reference:_ [`package.json`](https://gitlab.com/outschool-eng/growth-pod/obfuscate-learner-pii-demo/-/blob/main/package.json#L16)
+
 ### 🏃‍♀️ Step 4: Run demo
 
 ```
 yarn obfuscate
 ```
 
-After running the above 👆 command you should find an obfuscated sql file at `./output/obfuscated.sql`
+After running the above 👆 command you should find an obfuscated sql file at `./output/obfuscated.sql`. 
+
+**Example export:**
+
+The exported obfuscated sql file should look similar to the one provided in the demo [`example_export.sql`](https://gitlab.com/outschool-eng/growth-pod/obfuscate-learner-pii-demo/-/blob/main/example_export.sql)
+
