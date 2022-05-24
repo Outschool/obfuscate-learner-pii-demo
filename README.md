@@ -43,5 +43,9 @@ _reference:_ [`package.json`](https://gitlab.com/outschool-eng/growth-pod/obfusc
 yarn obfuscate
 ```
 
-After running the above 👆 command you should find an obfuscated sql file at `./output/obfuscated.sql`. The exported obfuscated sql file should look similar to the one provided in the demo [`example_export.sql`](https://gitlab.com/outschool-eng/growth-pod/obfuscate-learner-pii-demo/-/blob/main/example_export.sql)
+After running the above 👆 command you should find an obfuscated sql file at `./output/obfuscated.sql`. 
+
+**Example export:**
+
+The exported obfuscated sql file should look similar to the one provided in the demo [`example_export.sql`](https://gitlab.com/outschool-eng/growth-pod/obfuscate-learner-pii-demo/-/blob/main/example_export.sql)
 
