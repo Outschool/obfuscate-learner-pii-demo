@@ -21,7 +21,7 @@ SET default_tablespace = '';
 SET default_with_oids = false;
 
 --
--- Name: outschool_learner_pii; Type: TABLE; Schema: public; Owner: jmh
+-- Name: outschool_learner_pii; Type: TABLE; Schema: public; Owner: outschool
 --
 
 CREATE TABLE public.outschool_learner_pii (
@@ -32,10 +32,10 @@ CREATE TABLE public.outschool_learner_pii (
 );
 
 
-ALTER TABLE public.outschool_learner_pii OWNER TO jmh;
+ALTER TABLE public.outschool_learner_pii OWNER TO outschool;
 
 --
--- Data for Name: outschool_learner_pii; Type: TABLE DATA; Schema: public; Owner: jmh
+-- Data for Name: outschool_learner_pii; Type: TABLE DATA; Schema: public; Owner: outschool
 --
 
 COPY public.outschool_learner_pii (uid, email_address, personal_info, secret_token) FROM stdin;
