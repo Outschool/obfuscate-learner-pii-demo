@@ -54,9 +54,9 @@ The exported obfuscated sql file should look similar to the one provided in the 
 Here are the key pieces to get you up and running:
 
 * [pgCustom.ts](https://gitlab.com/outschool-eng/growth-pod/obfuscate-learner-pii-demo/-/blob/main/src/pgCustom.ts) - this the 💙 of the demo and helps us deconstruct and reassemble PostgreSQL streams on the fly. Worth a read through
-* [tableMappings.ts](https://gitlab.com/outschool-eng/growth-pod/obfuscate-learner-pii-demo/-/blob/main/src/tableMappings.ts) - this is where we map the table columns to the obfuscation methods we would like to filter them through
-* [filters.ts](https://gitlab.com/outschool-eng/growth-pod/obfuscate-learner-pii-demo/-/blob/main/src/filters.ts) - three obfuscation filters are included within the demo, they are: [*replaceEmailWithColumn*](https://gitlab.com/outschool-eng/growth-pod/obfuscate-learner-pii-demo/-/blob/main/src/filters.ts#L4), [*replaceWithNull*](https://gitlab.com/outschool-eng/growth-pod/obfuscate-learner-pii-demo/-/blob/main/src/filters.ts#L17), and [*replaceWithScrambledText*](https://gitlab.com/outschool-eng/growth-pod/obfuscate-learner-pii-demo/-/blob/main/src/filters.ts#L19). Feel free to extend this file and add your own!
+* [tableMappings.ts](https://gitlab.com/outschool-eng/growth-pod/obfuscate-learner-pii-demo/-/blob/main/src/tableMappings.ts) - this is where we map the table columns to the obfuscation methods we would like to filter the column data through
+* [filters.ts](https://gitlab.com/outschool-eng/growth-pod/obfuscate-learner-pii-demo/-/blob/main/src/filters.ts) - 3 obfuscation filters are included within the demo, they are: [*replaceEmailWithColumn*](https://gitlab.com/outschool-eng/growth-pod/obfuscate-learner-pii-demo/-/blob/main/src/filters.ts#L4), [*replaceWithNull*](https://gitlab.com/outschool-eng/growth-pod/obfuscate-learner-pii-demo/-/blob/main/src/filters.ts#L17), and [*replaceWithScrambledText*](https://gitlab.com/outschool-eng/growth-pod/obfuscate-learner-pii-demo/-/blob/main/src/filters.ts#L19). Feel free to extend this file and add your own!
 
 ## Misc
 
-* Shout out to BrianC's [`node-pg-copy-streams`](https://www.npmjs.com/package/pg-copy-streams) project. We used the [`@types`](https://www.npmjs.com/package/@types/pg-copy-streams) for this demo.
+* Shout out to BrianC's [`node-pg-copy-streams`](https://www.npmjs.com/package/pg-copy-streams) project. We used the [`@types`](https://www.npmjs.com/package/@types/pg-copy-streams) from that project for this demo.
