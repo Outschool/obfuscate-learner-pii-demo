@@ -1,4 +1,4 @@
-# [Obfuscate Learner Pii Demo](https://gitlab.com/outschool-eng/growth-pod/obfuscate-learner-pii-demo)
+# [Obfuscate Learner Pii Demo](https://github.com/Outschool/obfuscate-learner-pii-demo)
 [![MIT license](https://img.shields.io/badge/License-MIT-blue.svg)](https://mit-license.org/)
 
 ## Contributors
@@ -8,7 +8,7 @@
 ## Setup 🛠
 
 ### ✍️ Step 1: Edit .env
-Create an `.env` file from the provided [`sample.env`](https://gitlab.com/outschool-eng/growth-pod/obfuscate-learner-pii-demo/-/blob/main/sample.env) file. Update your database settings to match your local installation.
+Create an `.env` file from the provided [`sample.env`](https://github.com/Outschool/obfuscate-learner-pii-demo/blob/main/sample.env) file. Update your database settings to match your local installation.
 
 ```
 DB_NAME=outschool_obfuscate_demo
@@ -24,7 +24,7 @@ cp ./sample.env ./.env
 ```
 
 ### 🌱 Step 2: Import seed data
-Import the provided [`seed_data.sql`](https://gitlab.com/outschool-eng/growth-pod/obfuscate-learner-pii-demo/-/blob/main/seed_data.sql) file into your database.
+Import the provided [`seed_data.sql`](https://github.com/Outschool/obfuscate-learner-pii-demo/blob/main/seed_data.sql) file into your database.
 
 ```
 psql -U outschool --password -h 127.0.0.1 -d outschool_obfuscate_demo -a -f ./seed_data.sql
@@ -35,7 +35,7 @@ psql -U outschool --password -h 127.0.0.1 -d outschool_obfuscate_demo -a -f ./se
 yarn install
 ```
 
-_reference:_ [`package.json`](https://gitlab.com/outschool-eng/growth-pod/obfuscate-learner-pii-demo/-/blob/main/package.json#L16)
+_reference:_ [`package.json`](https://github.com/Outschool/obfuscate-learner-pii-demo/blob/main/package.json#L16)
 
 ### 🏃‍♀️ Step 4: Run demo
 
@@ -47,15 +47,15 @@ After running the above 👆 command you should find an obfuscated sql file at `
 
 **Example export:**
 
-The exported obfuscated sql file should look similar to the one provided in the demo [`example_export.sql`](https://gitlab.com/outschool-eng/growth-pod/obfuscate-learner-pii-demo/-/blob/main/example_export.sql)
+The exported obfuscated sql file should look similar to the one provided in the demo [`example_export.sql`](https://github.com/Outschool/obfuscate-learner-pii-demo/blob/main/example_export.sql)
 
 ## Key Pieces 🛠
 
 Here are the key pieces to get you up and running:
 
-* [pgCustom.ts](https://gitlab.com/outschool-eng/growth-pod/obfuscate-learner-pii-demo/-/blob/main/src/pgCustom.ts) - this the 💙 of the demo and helps us deconstruct and reassemble PostgreSQL streams on the fly. Worth a read through
-* [tableMappings.ts](https://gitlab.com/outschool-eng/growth-pod/obfuscate-learner-pii-demo/-/blob/main/src/tableMappings.ts) - this is where we map the table columns to the obfuscation methods we would like to filter the column data through
-* [filters.ts](https://gitlab.com/outschool-eng/growth-pod/obfuscate-learner-pii-demo/-/blob/main/src/filters.ts) - 3 obfuscation filters are included within the demo, they are: [*replaceEmailWithColumn*](https://gitlab.com/outschool-eng/growth-pod/obfuscate-learner-pii-demo/-/blob/main/src/filters.ts#L4), [*replaceWithNull*](https://gitlab.com/outschool-eng/growth-pod/obfuscate-learner-pii-demo/-/blob/main/src/filters.ts#L17), and [*replaceWithScrambledText*](https://gitlab.com/outschool-eng/growth-pod/obfuscate-learner-pii-demo/-/blob/main/src/filters.ts#L19). Feel free to extend this file and add your own!
+* [pgCustom.ts](https://github.com/Outschool/obfuscate-learner-pii-demo/blob/main/src/pgCustom.ts) - this the 💙 of the demo and helps us deconstruct and reassemble PostgreSQL streams on the fly. Worth a read through
+* [tableMappings.ts](https://github.com/Outschool/obfuscate-learner-pii-demo/blob/main/src/tableMappings.ts) - this is where we map the table columns to the obfuscation methods we would like to filter the column data through
+* [filters.ts](https://github.com/Outschool/obfuscate-learner-pii-demo/blob/main/src/filters.ts) - 3 obfuscation filters are included within the demo, they are: [*replaceEmailWithColumn*](https://github.com/Outschool/obfuscate-learner-pii-demo/blob/main/src/filters.ts#L4), [*replaceWithNull*](https://github.com/Outschool/obfuscate-learner-pii-demo/blob/main/src/filters.ts#L17), and [*replaceWithScrambledText*](https://github.com/Outschool/obfuscate-learner-pii-demo/blob/main/src/filters.ts#L19). Feel free to extend this file and add your own!
 
 ## Misc
 
